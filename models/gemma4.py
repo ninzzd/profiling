@@ -1,14 +1,11 @@
-from transformers import AutoProcessor, AutoModelForCausalLM
+from transformers import AutoModelForCausalLM, AutoProcessor
+import torch
 
 MODEL_ID = "google/gemma-4-E2B-it"
 
 # Load model
 processor = AutoProcessor.from_pretrained(MODEL_ID)
-model = AutoModelForCausalLM.from_pretrained(
-    MODEL_ID,
-    dtype="auto",
-    device_map="auto"
-)
+model = AutoModelForCausalLM.from_pretrained(MODEL_ID, dtype="auto", device_map="auto")
 
 # Prompt
 messages = [
@@ -18,17 +15,17 @@ messages = [
 
 # Process input
 text = processor.apply_chat_template(
-    messages, 
-    tokenize=False, 
-    add_generation_prompt=True, 
-    enable_thinking=False
+    messages, tokenize=False, add_generation_prompt=True, enable_thinking=False
 )
 inputs = processor(text=text, return_tensors="pt").to(model.device)
 input_len = inputs["input_ids"].shape[-1]
 
 # Generate output
-outputs = model.generate(**inputs, max_new_tokens=1024)
+outputs = model.generate(**inputs, max_new_tokens=1024)  # type: ignore
 response = processor.decode(outputs[0][input_len:], skip_special_tokens=False)
 
 # Parse output
-processor.parse_response(response)
+parsed = processor.parse_response(response)
+print(f'{parsed["role"]}:{parsed["content"]}')
+
+# print(torch.cuda.is_available())
