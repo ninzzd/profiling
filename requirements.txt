@@ -9,3 +9,4 @@ memory_profiler
 py-spy
 scalene
 snakeviz
+tuna

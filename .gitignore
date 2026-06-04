@@ -1,3 +1,5 @@
 .vscode
 .venv
 *.prof
+*.html
+*_pyprof_files
