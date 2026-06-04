@@ -53,12 +53,9 @@ py-spy record -o gemma4_pyprof_pyspy.svg -- python models/gemma4.py
 Example Flame Graph:
 ![](./../models/gemma4_pyprof_pyspy_flamegraph.svg)
 
-### Perf
-Run `nsys` profiler:
-```bash
-nsys profile -o gemma4_nsys python models/gemma4.py
-```
-Other profiling options with `nsys`:
+### Nsys/Nsight
+I don't understand any thing in the graphs yet.
+Various profiling options with `nsys`:
 ```bash
 # Basic GPU profiling
 nsys profile -o gemma4_nsys python models/gemma4.py
@@ -78,3 +75,21 @@ Visualization:
 nsys-ui gemma4_nsys.nsys-rep
 ```
 
+### Perf
+Unable to run these commands due to non-sudoers restrictions. `perf_event_paranoid` is set to 4 :skull:
+
+Profiling commands:
+```bash
+# Basic CPU profiling
+perf record -o gemma4_perf.data python models/gemma4.py
+
+# With event filtering (cycles, instructions, cache misses)
+perf record -e cycles,instructions,cache-references,cache-misses \
+  -o gemma4_perf.data python models/gemma4.py
+
+# With callgraph (shows call stacks)
+perf record -g -o gemma4_perf.data python models/gemma4.py
+
+# High-frequency sampling (1000 samples/sec)
+perf record -F 1000 -o gemma4_perf.data python models/gemma4.py
+```
