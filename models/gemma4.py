@@ -1,5 +1,9 @@
 from transformers import AutoModelForCausalLM, AutoProcessor
 import torch
+import cProfile
+import pstats
+from io import StringIO
+import time
 
 MODEL_ID = "google/gemma-4-E2B-it"
 
@@ -20,12 +24,22 @@ text = processor.apply_chat_template(
 inputs = processor(text=text, return_tensors="pt").to(model.device)
 input_len = inputs["input_ids"].shape[-1]
 
+# Profiling wrapper around inference
+profiler = cProfile.Profile()
+profiler.enable()
 # Generate output
 outputs = model.generate(**inputs, max_new_tokens=1024)  # type: ignore
+profiler.disable()
 response = processor.decode(outputs[0][input_len:], skip_special_tokens=False)
 
-# Parse output
-parsed = processor.parse_response(response)
-print(f'{parsed["role"]}:{parsed["content"]}')
 
-# print(torch.cuda.is_available())
+# Parse inference output
+parsed = processor.parse_response(response)
+print('Inference output:')
+print(f'{parsed["role"]}:{parsed["content"]}')
+print()
+
+# Profiling output and stats
+stats = pstats.Stats(profiler)
+stats.sort_stats('cumulative').print_stats(10)
+stats.sort_stats('cumulative').dump_stats('gemma4_pyprof.prof')

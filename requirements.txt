@@ -5,3 +5,7 @@ accelerate
 bitsandbytes
 safetensors
 huggingface_hub
+memory_profiler
+py-spy
+scalene
+snakeviz
