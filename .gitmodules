@@ -1,0 +1,3 @@
+[submodule "retrieval-only/faiss"]
+	path = retrieval-only/faiss
+	url = https://github.com/facebookresearch/faiss.git
