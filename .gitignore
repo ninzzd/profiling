@@ -3,4 +3,6 @@
 *.prof
 *.html
 *_pyprof_files
-retrieval-only/builds
+retrieval-only/faiss-builds
+**/build/
+**/build.log
