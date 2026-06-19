@@ -302,3 +302,56 @@ Throughput: 152.319 queries/s
       20.885495000 seconds user
        9.503220000 seconds sys
 ```
+
+**Iterative Run:**
+
+The same file `wikiall-cpu-ivf-flat.cpp` has been modified to support iterative execution for finding important statistical performance metrics.
+Run:
+```bash
+./build/wikiall_cpu_ivf_flat 0 20
+```
+
+Output:
+```
+IVF Properties:
+nlist: 100
+nprobe: 10
+Reading dataset from disk...
+Read complete!
+Index size: 1000000 
+Index dimensions:768
+Read time: 0.875017 s
+Training the IVF index...
+Training complete!
+Training time: 0.555977 s
+Adding vectors to the IVF index...
+Index created!
+Index creation latency: 0.846025 s
+Iteration: 1
+Iteration: 2
+Iteration: 3
+Iteration: 4
+Iteration: 5
+Iteration: 6
+Iteration: 7
+Iteration: 8
+Iteration: 9
+Iteration: 10
+Iteration: 11
+Iteration: 12
+Iteration: 13
+Iteration: 14
+Iteration: 15
+Iteration: 16
+Iteration: 17
+Iteration: 18
+Iteration: 19
+Iteration: 20
+P50 Latency: 0.636953s
+P90 Latency: 0.655355s
+P95 Latency: 0.657642s
+P99 Latency: 0.657642s
+Mean Latency: 0.635972s
+Peak Throughput: 164.273qps
+Mean Throughput: 157.305qps
+```
