@@ -11,22 +11,38 @@ find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
 
 # Add your benchmark executable
-add_executable(simple_cpu_debug
-    simple-cpu-debug.cpp
+add_executable(toy_cpu_flat
+    toy-cpu-flat.cpp
+)
+
+add_executable(wikiall_cpu_flat
+    wikiall-cpu-flat.cpp
 )
 
 # FAISS headers (source tree)
-target_include_directories(simple_cpu_debug PRIVATE
+target_include_directories(toy_cpu_flat PRIVATE
+    ${CMAKE_SOURCE_DIR}/../faiss
+)
+target_include_directories(wikiall_cpu_flat PRIVATE
     ${CMAKE_SOURCE_DIR}/../faiss
 )
 
 # Path to the built FAISS library
-target_link_directories(simple_cpu_debug PRIVATE
+target_link_directories(toy_cpu_flat PRIVATE
+    ${CMAKE_SOURCE_DIR}/../faiss-builds/cpu-debug-cpp/faiss
+)
+target_link_directories(wikiall_cpu_flat PRIVATE
     ${CMAKE_SOURCE_DIR}/../faiss-builds/cpu-debug-cpp/faiss
 )
 
 # Link against FAISS
-target_link_libraries(simple_cpu_debug PRIVATE
+target_link_libraries(toy_cpu_flat PRIVATE
+    faiss
+    OpenMP::OpenMP_CXX
+    ${BLAS_LIBRARIES}
+    ${LAPACK_LIBRARIES}
+)
+target_link_libraries(wikiall_cpu_flat PRIVATE
     faiss
     OpenMP::OpenMP_CXX
     ${BLAS_LIBRARIES}

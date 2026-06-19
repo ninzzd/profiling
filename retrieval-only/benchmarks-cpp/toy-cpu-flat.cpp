@@ -33,7 +33,7 @@ int main() {
     faiss::IndexFlatL2 index(d); // Initialize db with 768 as no. of embedding dimensions
 
     auto t0 = std::chrono::high_resolution_clock::now();
-    index.add(nb, xb.data());
+    index.add(nb, xb.data()); // database initialization by adding vectors
     auto t1 = std::chrono::high_resolution_clock::now();
 
     std::cout << "Index size: " << index.ntotal << " vectors\n";
@@ -48,7 +48,7 @@ int main() {
     std::vector<float> distances(nq * k); // corresponding distances
 
     auto t2 = std::chrono::high_resolution_clock::now();
-    index.search(
+    index.search( // search for all query vectors in xq, find the IDs and distances of top-K nearest neighbours
         nq,
         xq.data(),
         k,

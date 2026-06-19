@@ -6,3 +6,5 @@
 retrieval-only/faiss-builds
 **/build/
 **/build.log
+**.tar
+datasets/
