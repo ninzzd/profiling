@@ -36,6 +36,17 @@ cmake --build ../faiss-builds/cpu-debug-cpp -j8
 ```
 ## Benchmarks
 
+### General Build Commands
+**Configuration:**
+```bash
+cmake -S . -B build
+```
+
+**Build:**
+```bash
+make -C build -j$(nproc)
+```
+
 ### Simple CPU-Only Baseline (Toy)
 
 (change documentation based on new knowledge about `IndexFlatL2`, checkout **locality-sensitive hashing**, understand its applicability for FPGA-based acceleration)
@@ -153,17 +164,6 @@ tar -xvf wiki_all_1M.tar -C retrieval-only/datasets/wikiall
 - Query vectors - 100 (picked randomly, psuedorandom)
 - Top-10 vector retrieval
 
-**Configuration:**
-```bash
-cmake -S . -B build
-```
-
-**Build:**
-```bash
-cd build
-make -j$(nproc)
-```
-
 **Run:**
 Direct:
 ```bash
@@ -220,4 +220,85 @@ Throughput: 36.9841 queries/s
 
       40.306320000 seconds user
        1.977347000 seconds sys
+```
+
+### Wiki-All CPU-Only IVF Flat Index
+
+**Direct Run:**
+```bash
+perf record ./build/wikiall_cpu_ivf_flat
+```
+
+Output:
+```
+IVF Properties:
+nlist: 100
+nprobe: 10
+Reading dataset from disk...
+Read complete!
+Index size: 1000000 
+Index dimensions:768
+Read time: 0.865372 s
+Generating query vectors...
+Query generation complete!
+Query generation time: 3.2112e-05 s
+Training the IVF index...
+Training complete!
+Training time: 0.5827 s
+Adding vectors to the IVF index...
+Index created!
+Index creation latency: 0.894535 s
+Search complete!
+Latency: 0.658974 s
+Latency/query: 0.00658974 s
+Throughput: 151.751 queries/s
+```
+
+**Perf Stat (Detailed):**
+```bash
+perf stat -d ./build/wikiall_cpu_ivf_flat 
+```
+Output:
+```
+IVF Properties:
+nlist: 100
+nprobe: 10
+Reading dataset from disk...
+Read complete!
+Index size: 1000000 
+Index dimensions:768
+Read time: 0.880251 s
+Generating query vectors...
+Query generation complete!
+Query generation time: 3.8002e-05 s
+Training the IVF index...
+Training complete!
+Training time: 0.528499 s
+Adding vectors to the IVF index...
+Index created!
+Index creation latency: 0.885306 s
+Search complete!
+Latency: 0.656515 s
+Latency/query: 0.00656515 s
+Throughput: 152.319 queries/s
+
+ Performance counter stats for './build/wikiall_cpu_ivf_flat':
+
+    30,384,301,734      task-clock                       #    9.849 CPUs utilized             
+            68,847      context-switches                 #    2.266 K/sec                     
+                88      cpu-migrations                   #    2.896 /sec                      
+         2,152,987      page-faults                      #   70.859 K/sec                     
+   154,205,284,898      instructions                     #    1.00  insn per cycle            
+                                                  #    0.07  stalled cycles per insn     (71.44%)
+   153,502,141,029      cycles                           #    5.052 GHz                         (71.40%)
+    11,480,906,802      stalled-cycles-frontend          #    7.48% frontend cycles idle        (71.44%)
+    19,413,904,656      branches                         #  638.945 M/sec                       (71.44%)
+        97,831,053      branch-misses                    #    0.50% of all branches             (71.41%)
+    68,793,188,429      L1-dcache-loads                  #    2.264 G/sec                       (71.45%)
+     2,596,253,840      L1-dcache-load-misses            #    3.77% of all L1-dcache accesses   (71.47%)
+
+       3.084936270 seconds time elapsed
+
+      20.885495000 seconds user
+       9.503220000 seconds sys
 ```

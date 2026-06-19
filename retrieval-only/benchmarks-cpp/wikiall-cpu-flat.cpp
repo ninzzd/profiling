@@ -7,14 +7,17 @@
 #include <chrono>
 #include <iostream>
 
-int main() {
+int main(int argc, char** argv) {
+    int32_t n, d;
+    constexpr int nq = 100;
+    constexpr int k = 10;
+
     std::ifstream in("./../datasets/wikiall/base.1M.fbin", std::ios::binary);
 
-    int32_t n, d;
+    std::cout << "Reading dataset from disk..." << std::endl;
     auto t0 = std::chrono::high_resolution_clock::now();
     in.read(reinterpret_cast<char*>(&n), sizeof(int32_t));
     in.read(reinterpret_cast<char*>(&d), sizeof(int32_t));
-
     std::vector<float> xb(static_cast<size_t>(n) * d);
     in.read(reinterpret_cast<char*>(xb.data()),
             xb.size() * sizeof(float));
@@ -26,9 +29,6 @@ int main() {
 
     std::mt19937 gen(std::random_device{}());
     std::uniform_int_distribution<int> dist(0,(int)n-1);  // integers in [0, 99]
-
-    constexpr int nq = 100;
-    constexpr int k = 10;
 
     std::vector<float> xq(static_cast<size_t>(nq) * d);
     for (int i = 0; i < nq; ++i) {
