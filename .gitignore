@@ -8,3 +8,5 @@ retrieval-only/faiss-builds
 **/build.log
 **.tar
 datasets/
+**.fbin
+**.data

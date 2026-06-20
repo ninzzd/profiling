@@ -60,3 +60,42 @@ target_link_libraries(wikiall_cpu_ivf_flat PRIVATE
     ${BLAS_LIBRARIES}
     ${LAPACK_LIBRARIES}
 )
+
+# query_gen
+add_executable(query_gen
+    query-gen.cpp
+)
+
+# wikiall-cpu-ivf-pq
+add_executable(wikiall_cpu_ivf_pq
+    wikiall-cpu-ivf-pq.cpp
+)
+target_include_directories(wikiall_cpu_ivf_pq PRIVATE
+    ${CMAKE_SOURCE_DIR}/../faiss
+)
+target_link_directories(wikiall_cpu_ivf_pq PRIVATE
+    ${CMAKE_SOURCE_DIR}/../faiss-builds/cpu-debug-cpp/faiss
+)
+target_link_libraries(wikiall_cpu_ivf_pq PRIVATE
+    faiss
+    OpenMP::OpenMP_CXX
+    ${BLAS_LIBRARIES}
+    ${LAPACK_LIBRARIES}
+)
+
+# wikiall-cpu-hnsw
+add_executable(wikiall_cpu_hnsw
+    wikiall-cpu-hnsw.cpp
+)
+target_include_directories(wikiall_cpu_hnsw PRIVATE
+    ${CMAKE_SOURCE_DIR}/../faiss
+)
+target_link_directories(wikiall_cpu_hnsw PRIVATE
+    ${CMAKE_SOURCE_DIR}/../faiss-builds/cpu-debug-cpp/faiss
+)
+target_link_libraries(wikiall_cpu_hnsw PRIVATE
+    faiss
+    OpenMP::OpenMP_CXX
+    ${BLAS_LIBRARIES}
+    ${LAPACK_LIBRARIES}
+)

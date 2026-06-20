@@ -33,12 +33,28 @@ int main(int argc, char** argv){
     std::mt19937 gen(std::random_device{}());
     std::uniform_int_distribution<int> dist(0,(int)n-1);
     
+    std::cout << "Creating query vectors..." << std::endl;
+    auto t2 = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < nq; i++) {
         memcpy(xq.data() + i * d, xb.data() + dist(gen) * d, d * sizeof(float));
     }
+    auto t3 = std::chrono::high_resolution_clock::now();
+    std::cout << "Finished query vector selection and batch creation" << std::endl;
+    std::cout << "Query batch creation time: "
+              <<  std::chrono::duration<double>(t3 - t2).count()
+              << "s\n";
     
+    std::cout << "Writing query batch to disk.." << std::endl;
+    auto t4 = std::chrono::high_resolution_clock::now();
     std::ofstream out("query.fbin",std::ios::binary);
-    out.write(reinterpret_cast<char*>(n), sizeof(int32_t));
-    out.write(reinterpret_cast<char*>(d), sizeof(int32_t));
+    out.write(reinterpret_cast<char*>(&nq), sizeof(int32_t));
+    out.write(reinterpret_cast<char*>(&d), sizeof(int32_t));
+    out.write(reinterpret_cast<char*>(xq.data()), static_cast<size_t>(nq*d*sizeof(float)));
+    auto t5 = std::chrono::high_resolution_clock::now();
+    std::cout << "Finished writing query batch" << std::endl;
+    std::cout << "Query batch write time: "
+              <<  std::chrono::duration<double>(t5 - t4).count()
+              << "s\n";
+
     return 0;
 }
