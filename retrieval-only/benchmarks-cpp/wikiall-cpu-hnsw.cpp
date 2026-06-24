@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
               << " s\n";
 
     // Index creation
-    faiss::IndexHNSWFlat index(d,M); // IVF index with flat quantization
+    faiss::IndexHNSWFlat index(d,M,faiss::METRIC_INNER_PRODUCT); // HNSW index, flat quantization, inner-product (cosine-similarity) metric
     index.hnsw.efConstruction = efConstruction;
     index.hnsw.efSearch = efSearch;
     std::cout << "Adding vectors to the HNSW index..." << std::endl;
@@ -141,8 +141,36 @@ int main(int argc, char** argv) {
     std::cout << "Mean Latency: " << avglat << "s" << std::endl;
     std::cout << "Peak Throughput: " << peakthr << "qps" << std::endl;
     std::cout << "Mean Throughput: " << avgthr << "qps" << std::endl;
-    std::cout << "Peak recall: " << peakrcl*100.0 << "%" << std::endl;
-    std::cout << "Mean recall: " << avgrcl*100.0 << "%" << std::endl;
+    std::cout << "Peak recall@" << k << ": " << peakrcl*100.0 << "%" << std::endl;
+    std::cout << "Mean recall@"<< k << ": " << avgrcl*100.0 << "%" << std::endl;
+
+    // Label comparison test
+    // std::cout << "\nSample labels (query0):\n";
+    // std::cout << "\nBaseline:\n";
+    // for(int i = 0;i < k;i++){
+    //     std::cout << base_labels[i] << " ";
+    // }
+    // std::cout << std::endl;
+    // std::cout << "\bHNSW Flat:\n";
+    // for(int i = 0;i < k;i++){
+    //     std::cout << labels[i] << " ";
+    // }
+    start = std::chrono::high_resolution_clock::now();
+    std::ofstream hnswres("./hnswflat-res.fbin",std::ios::binary);
+    hnswres.write(reinterpret_cast<char*>(&efConstruction), sizeof(int));
+    hnswres.write(reinterpret_cast<char*>(&efSearch), sizeof(int));
+    hnswres.write(reinterpret_cast<char*>(&M), sizeof(int));
+    hnswres.write(reinterpret_cast<char*>(labels.data()), sizeof(faiss::idx_t)*labels.size());
+    hnswres.write(reinterpret_cast<char*>(&p50lat), sizeof(double));
+    hnswres.write(reinterpret_cast<char*>(&p90lat), sizeof(double));
+    hnswres.write(reinterpret_cast<char*>(&p95lat), sizeof(double));
+    hnswres.write(reinterpret_cast<char*>(&p99lat), sizeof(double));
+    hnswres.write(reinterpret_cast<char*>(&avglat), sizeof(double));
+    hnswres.write(reinterpret_cast<char*>(&peakthr), sizeof(double));
+    hnswres.write(reinterpret_cast<char*>(&avgthr), sizeof(double));
+    end = std::chrono::high_resolution_clock::now();
+    std::cout << "Results writing complete!\n";
+    std::cout << "Write time: " << std::chrono::duration<double>(end - start).count() << " s\n";
 
     return 0;
 }
