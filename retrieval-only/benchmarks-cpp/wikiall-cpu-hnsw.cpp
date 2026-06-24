@@ -73,28 +73,28 @@ int main(int argc, char** argv) {
 
     std::vector<double> latency_vec;
     std::vector<double> throughput_vec;
-
+    std::vector<faiss::idx_t> labels(static_cast<size_t>(nq) * k);
+    std::vector<float> distances(static_cast<size_t>(nq) * k);
+    std::vector<float> xq(static_cast<size_t>(nq) * d);
+    
     for(int i = 1;i <= iter;i++){
         std::cout << "Iteration: " << i << std::endl;
-        std::vector<faiss::idx_t> labels(static_cast<size_t>(nq) * k);
-        std::vector<float> distances(static_cast<size_t>(nq) * k);
-
-        std::vector<float> xq(static_cast<size_t>(nq) * d);
-        if(mode){
-            std::cout << "Generating query vectors..." << std::endl;
-        }
-        auto t2 = std::chrono::high_resolution_clock::now();
-        for (int i = 0; i < nq; ++i) {
-            memcpy(xq.data() + i * d, xb.data() + dist(gen) * d, d * sizeof(float));
-        }
-        auto t3 = std::chrono::high_resolution_clock::now();
-
-        if(mode){
-            std::cout << "Query generation complete!" << std::endl;
-            std::cout << "Query generation time: "
-                    << std::chrono::duration<double>(t3 - t2).count()
-                    << " s\n";
-        }
+        
+        // no longer generating query vectors, inputted from query.fbin
+        // if(mode){
+        //     std::cout << "Generating query vectors..." << std::endl;
+        // }
+        // auto t2 = std::chrono::high_resolution_clock::now();
+        // for (int i = 0; i < nq; ++i) {
+        //     memcpy(xq.data() + i * d, xb.data() + dist(gen) * d, d * sizeof(float));
+        // }
+        // auto t3 = std::chrono::high_resolution_clock::now();
+        // if(mode){
+        //     std::cout << "Query generation complete!" << std::endl;
+        //     std::cout << "Query generation time: "
+        //             << std::chrono::duration<double>(t3 - t2).count()
+        //             << " s\n";
+        // }
 
         auto t8 = std::chrono::high_resolution_clock::now();
         index.search(nq, xq.data(), k, distances.data(), labels.data());

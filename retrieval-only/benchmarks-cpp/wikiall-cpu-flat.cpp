@@ -7,10 +7,20 @@
 #include <chrono>
 #include <iostream>
 
+// Syntax: wikiall_cpu_flat <k> <iter>
 int main(int argc, char** argv) {
     int32_t n, d;
-    constexpr int nq = 100;
-    constexpr int k = 10;
+    int32_t nq, dq;
+    int k;
+    int iter;
+    if(argc < 3){
+        std::cerr << "Syntax error. Parameters not specified. Correct syntax: wikiall_cpu_flat <k> <iter>\n";
+        return -1;
+    }
+    else{
+        k = std::stoi(argv[1]);
+        iter = std::stoi(argv[2]);
+    }
 
     std::ifstream in("./../datasets/wikiall/base.1M.fbin", std::ios::binary);
 
@@ -19,26 +29,52 @@ int main(int argc, char** argv) {
     in.read(reinterpret_cast<char*>(&n), sizeof(int32_t));
     in.read(reinterpret_cast<char*>(&d), sizeof(int32_t));
     std::vector<float> xb(static_cast<size_t>(n) * d);
-    in.read(reinterpret_cast<char*>(xb.data()),
-            xb.size() * sizeof(float));
+    in.read(reinterpret_cast<char*>(xb.data()), xb.size() * sizeof(float));
     auto t1 = std::chrono::high_resolution_clock::now();
-    std::cout << "Read complete!" << std::endl;
-    std::cout << "Read time: "
+    std::cout << "Index read complete!" << std::endl;
+    std::cout << "Index read time: "
               << std::chrono::duration<double>(t1 - t0).count()
               << " s\n";
 
-    std::mt19937 gen(std::random_device{}());
-    std::uniform_int_distribution<int> dist(0,(int)n-1);  // integers in [0, 99]
+    // std::mt19937 gen(std::random_device{}());
+    // std::uniform_int_distribution<int> dist(0,(int)n-1);  // integers in [0, 99]
 
-    std::vector<float> xq(static_cast<size_t>(nq) * d);
-    for (int i = 0; i < nq; ++i) {
-        memcpy(xq.data() + i * d, xb.data() + dist(gen) * d, d * sizeof(float));
-    }
+    // std::vector<float> xq(static_cast<size_t>(nq) * d);
+    // Not using random sampling anymore
+    // for (int i = 0; i < nq; ++i) {
+    //     memcpy(xq.data() + i * d, xb.data() + dist(gen) * d, d * sizeof(float));
+    // }
 
-    faiss::IndexFlatL2 index(d);
+    std::ifstream qrystrm("./query.fbin",std::ios::binary);
     auto t2 = std::chrono::high_resolution_clock::now();
-    index.add(n, xb.data());
+    if(!qrystrm){
+        std::cerr << "Query file not found" << std::endl;
+        return -1;
+    }
+    qrystrm.read(reinterpret_cast<char*>(&nq), sizeof(int32_t));
+    qrystrm.read(reinterpret_cast<char*>(&dq), sizeof(int32_t));
+    if(dq != d){
+        std::cerr << "Incompatable query: dimension mismatch" << std::endl;
+        return -1;
+    }
+    std::vector<float> xq(static_cast<size_t>(nq*d));
+    qrystrm.read(reinterpret_cast<char*>(xq.data()),xq.size()*sizeof(float));
     auto t3 = std::chrono::high_resolution_clock::now();
+    std::cout << "Query read complete!" << std::endl;
+    std::cout << "Query read time: "
+              << std::chrono::duration<double>(t3 - t2).count()
+              << " s\n";
+    std::cout << "Query batch size: " << nq << std::endl;
+    std::cout << "Search size (k): " << k << std::endl;
+    std::cout << "Search iteration count: " << iter << std::endl;
+
+    std::vector<double> latvec;
+    std::vector<double> thpvec;
+    faiss::IndexFlatIP index(d); // cosine similarity - most commonly used metric
+    
+    t2 = std::chrono::high_resolution_clock::now();
+    index.add(n, xb.data());
+    t3 = std::chrono::high_resolution_clock::now();
     std::cout << "Index creation complete!" << std::endl;
     std::cout << "Index size: " << index.ntotal << " vectors\n";
     std::cout << "Index dimensions:" << d << std::endl;
@@ -49,19 +85,56 @@ int main(int argc, char** argv) {
     std::vector<faiss::idx_t> labels(static_cast<size_t>(nq) * k);
     std::vector<float> distances(static_cast<size_t>(nq) * k);
 
-    auto t4 = std::chrono::high_resolution_clock::now();
-    index.search(nq, xq.data(), k, distances.data(), labels.data());
-    auto t5 = std::chrono::high_resolution_clock::now();
+    for(int i = 1;i <= iter;i++){
+        auto t4 = std::chrono::high_resolution_clock::now();
+        index.search(nq, xq.data(), k, distances.data(), labels.data());
+        auto t5 = std::chrono::high_resolution_clock::now();
+        double lat = std::chrono::duration<double>(t5 - t4).count();
+        double thp = nq/lat;
+        latvec.push_back(lat);
+        thpvec.push_back(thp);
+    }
+    std::sort(latvec.begin(),latvec.end());
+    double p50lat = latvec[(int)floor(iter/2.0)];
+    double p90lat = latvec[(int)floor(9.0*iter/10.0)];
+    double p95lat = latvec[(int)floor(9.5*iter/10.0)];
+    double p99lat = latvec[(int)floor(9.9*iter/10.0)];
+    double avglat = std::accumulate(latvec.begin(),latvec.end(),0.0)/iter;
+    double peakthr = *std::max_element(thpvec.begin(),thpvec.end());
+    double avgthr = std::accumulate(thpvec.begin(),thpvec.end(),0.0)/iter;
 
-    std::cout << "Search complete!" << std::endl;
-    std::cout << "Latency: "
-              << std::chrono::duration<double>(t5 - t4).count()
-              << " s\n";
-    std::cout << "Latency/query: "
-              << std::chrono::duration<double>(t5 - t4).count() / nq
-              << " s\n";
-    std::cout << "Throughput: "
-              << nq / std::chrono::duration<double>(t5 - t4).count()
-              << " queries/s\n";
+    // std::cout << std::fixed << std::setprecision(9);
+    std::cout << "P50 Latency: " << p50lat << "s" << std::endl;
+    std::cout << "P90 Latency: " << p90lat << "s" << std::endl;
+    std::cout << "P95 Latency: " << p95lat << "s" << std::endl;
+    std::cout << "P99 Latency: " << p99lat << "s" << std::endl;
+    std::cout << "Mean Latency: " << avglat << "s" << std::endl;
+    std::cout << "Peak Throughput: " << peakthr << "qps" << std::endl;
+    std::cout << "Mean Throughput: " << avgthr << "qps" << std::endl;
+
+    std::ofstream baseres("./baseline-res.fbin",std::ios::binary);
+    std::cout << "Writing results to disk..." << std::endl;
+    /*
+    Results format:
+    <iter>
+    <k>
+    <stats>
+    <labels>
+    */
+    auto t4 = std::chrono::high_resolution_clock::now();
+    baseres.write(reinterpret_cast<char*>(&k), sizeof(int32_t));
+    baseres.write(reinterpret_cast<char*>(&iter), sizeof(int));
+    baseres.write(reinterpret_cast<char*>(&p50lat), sizeof(double));
+    baseres.write(reinterpret_cast<char*>(&p90lat), sizeof(double));
+    baseres.write(reinterpret_cast<char*>(&p95lat), sizeof(double));
+    baseres.write(reinterpret_cast<char*>(&p99lat), sizeof(double));
+    baseres.write(reinterpret_cast<char*>(&avglat), sizeof(double));
+    baseres.write(reinterpret_cast<char*>(&peakthr), sizeof(double));
+    baseres.write(reinterpret_cast<char*>(&avgthr), sizeof(double));
+    baseres.write(reinterpret_cast<char*>(labels.data()), sizeof(faiss::idx_t)*labels.size());
+    auto t5 = std::chrono::high_resolution_clock::now();
+    std::cout << "Results writing complete!\n";
+    std::cout << "Write time: " << std::chrono::duration<double>(t5 - t4).count() << " s\n";
+
     return 0;
 }
