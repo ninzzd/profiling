@@ -9,8 +9,8 @@
 
 // Syntax: wikiall_cpu_flat <k> <iter>
 int main(int argc, char** argv) {
-    int32_t n, d;
-    int32_t nq, dq;
+    int n, d;
+    int nq, dq;
     int k;
     int iter;
     if(argc < 3){
@@ -118,12 +118,13 @@ int main(int argc, char** argv) {
     Results format:
     <iter>
     <k>
-    <stats>
     <labels>
+    <stats>
     */
     auto t4 = std::chrono::high_resolution_clock::now();
-    baseres.write(reinterpret_cast<char*>(&k), sizeof(int32_t));
+    baseres.write(reinterpret_cast<char*>(&k), sizeof(int));
     baseres.write(reinterpret_cast<char*>(&iter), sizeof(int));
+    baseres.write(reinterpret_cast<char*>(labels.data()), sizeof(faiss::idx_t)*labels.size());
     baseres.write(reinterpret_cast<char*>(&p50lat), sizeof(double));
     baseres.write(reinterpret_cast<char*>(&p90lat), sizeof(double));
     baseres.write(reinterpret_cast<char*>(&p95lat), sizeof(double));
@@ -131,7 +132,6 @@ int main(int argc, char** argv) {
     baseres.write(reinterpret_cast<char*>(&avglat), sizeof(double));
     baseres.write(reinterpret_cast<char*>(&peakthr), sizeof(double));
     baseres.write(reinterpret_cast<char*>(&avgthr), sizeof(double));
-    baseres.write(reinterpret_cast<char*>(labels.data()), sizeof(faiss::idx_t)*labels.size());
     auto t5 = std::chrono::high_resolution_clock::now();
     std::cout << "Results writing complete!\n";
     std::cout << "Write time: " << std::chrono::duration<double>(t5 - t4).count() << " s\n";
