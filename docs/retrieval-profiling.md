@@ -34,7 +34,7 @@ Build the given configuration:
 # keep it safe, don't use too many cores
 cmake --build ../faiss-builds/cpu-debug-cpp -j8 
 ```
-## Benchmarks
+## Simple Benchmarking
 
 ### General Build Commands
 **Configuration:**
@@ -610,4 +610,139 @@ P99 Latency: 0.0148241s
 Mean Latency: 0.00881591s
 Peak Throughput: 14779.5qps
 Mean Throughput: 11992qps
+```
+
+## Inter-Index Comparison Benchmarks (Workload Sweeps)
+- Generate a common query batch
+- Run baseline
+- Run all benchmarks, compare with baseline, check recall@k and latency
+- Sweep over query batch size, k
+
+### Single Query Batch Tests
+- nq = 10
+- k = 100
+- iterations = 100
+
+### Baseline (Contiguous array index - Flat - Inner-Product Metric)
+```
+Reading dataset from disk...
+Index read complete!
+Index read time: 0.855165 s
+Query read complete!
+Query read time: 1.7874e-05 s
+Query batch size: 10
+Search size (k): 100
+Search iteration count: 100
+Index creation complete!
+Index size: 1000000 vectors
+Index dimensions:768
+Index creation latency: 0.600738 s
+P50 Latency: 0.235964s
+P90 Latency: 0.266453s
+P95 Latency: 0.276967s
+P99 Latency: 0.289969s
+Mean Latency: 0.23453s
+Peak Throughput: 53.4821qps
+Mean Throughput: 43.0725qps
+Writing results to disk...
+Results writing complete!
+Write time: 5.751e-06 s
+```
+
+### HNSW Flat
+```
+HNSW Properties:
+efConstruction: 200
+efSearch: 64
+M: 16
+Reading dataset from disk...
+Read complete!
+Index size: 1000000 
+Index dimensions:768
+Read time: 0.86229 s
+Adding vectors to the HNSW index...
+Index created!
+Index creation latency: 181.369 s
+Query read complete!
+Query read time: 1.4819e-05 s
+Query batch size: 10
+Reading baseline results...
+Baseline results read complete!
+Read time: 2.0429e-05 s
+P50 Latency: 0.00048397s
+P90 Latency: 0.000988138s
+P95 Latency: 0.00147359s
+P99 Latency: 0.00240173s
+Mean Latency: 0.00059506s
+Peak Throughput: 24742.9qps
+Mean Throughput: 19449.3qps
+Peak recall@100: 100%
+Mean recall@100: 90.8%
+Results writing complete!
+Write time: 9.5493e-05 s
+```
+
+### IVF Flat
+```
+IVF-Flat Properties:
+nlist: 2048
+nprobe: 36
+Reading dataset from disk...
+Read complete!
+Index size: 1000000 
+Index dimensions:768
+Read time: 0.863535 s
+Training coarse quantizer, adding vectors to the IVF-Flat index...
+Index created!
+Index creation latency: 21.1479 s
+Query read complete!
+Query read time: 1.4748e-05 s
+Query batch size: 10
+Reading baseline results...
+Baseline results read complete!
+Read time: 6.893e-06 s
+P50 Latency: 0.0125564s
+P90 Latency: 0.0160017s
+P95 Latency: 0.0162424s
+P99 Latency: 0.0176888s
+Mean Latency: 0.0133619s
+Peak Throughput: 814.807qps
+Mean Throughput: 756.51qps
+Peak recall@100: 100%
+Mean recall@100: 98.8%
+Results writing complete!
+Write time: 7.7438e-05 s
+```
+
+### IVF PQ
+```IVF-PQ Properties:
+nlist: 2048
+nprobe: 36
+nbits: 8
+m: 48
+Reading dataset from disk...
+Read complete!
+Index size: 1000000 
+Index dimensions:768
+Read time: 0.857843 s
+Training coarse quantizer, adding vectors to the IVF-PQ index...
+Index created!
+Index creation latency: 112.398 s
+Query read complete!
+Query read time: 1.6531e-05 s
+Query batch size: 10
+Reading baseline results...
+Baseline results read complete!
+Read time: 7.484e-06 s
+P50 Latency: 0.00112923s
+P90 Latency: 0.00149474s
+P95 Latency: 0.00330318s
+P99 Latency: 0.00656573s
+Mean Latency: 0.00136252s
+Peak Throughput: 9531.49qps
+Mean Throughput: 8340qps
+Peak recall@100: 83%
+Mean recall@100: 58.7%
+Results writing complete!
+Write time: 0.000123467 s
 ```

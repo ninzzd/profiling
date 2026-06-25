@@ -17,7 +17,7 @@ int main(int argc, char** argv) {
     int k;
 
     // Tunable IVF flat specific params (will enable sweep later)
-    int nlist = 100;
+    int nlist = 2048;
     int nprobe = 36;
     
 
