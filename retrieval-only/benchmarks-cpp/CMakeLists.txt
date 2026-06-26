@@ -99,3 +99,88 @@ target_link_libraries(wikiall_cpu_hnsw PRIVATE
     ${BLAS_LIBRARIES}
     ${LAPACK_LIBRARIES}
 )
+
+# wikiall-cpu-ivf-pq
+add_executable(wikiall_cpu_ivf_pq
+    wikiall-cpu-ivf-pq.cpp
+)
+target_include_directories(wikiall_cpu_ivf_pq PRIVATE
+    ${CMAKE_SOURCE_DIR}/../faiss
+)
+target_link_directories(wikiall_cpu_ivf_pq PRIVATE
+    ${CMAKE_SOURCE_DIR}/../faiss-builds/cpu-debug-cpp/faiss
+)
+target_link_libraries(wikiall_cpu_ivf_pq PRIVATE
+    faiss
+    OpenMP::OpenMP_CXX
+    ${BLAS_LIBRARIES}
+    ${LAPACK_LIBRARIES}
+)
+
+# idxgen-baseline
+add_executable(idxgen_baseline
+    idxgen-baseline.cpp
+)
+target_include_directories(idxgen_baseline PRIVATE
+    ${CMAKE_SOURCE_DIR}/../faiss
+)
+target_link_directories(idxgen_baseline PRIVATE
+    ${CMAKE_SOURCE_DIR}/../faiss-builds/cpu-debug-cpp/faiss
+)
+target_link_libraries(idxgen_baseline PRIVATE
+    faiss
+    OpenMP::OpenMP_CXX
+    ${BLAS_LIBRARIES}
+    ${LAPACK_LIBRARIES}
+)
+
+# idxgen-hnsw
+add_executable(idxgen_hnsw
+    idxgen-hnsw.cpp
+)
+target_include_directories(idxgen_hnsw PRIVATE
+    ${CMAKE_SOURCE_DIR}/../faiss
+)
+target_link_directories(idxgen_hnsw PRIVATE
+    ${CMAKE_SOURCE_DIR}/../faiss-builds/cpu-debug-cpp/faiss
+)
+target_link_libraries(idxgen_hnsw PRIVATE
+    faiss
+    OpenMP::OpenMP_CXX
+    ${BLAS_LIBRARIES}
+    ${LAPACK_LIBRARIES}
+)
+
+# idxgen-ivf-pq
+add_executable(idxgen_ivf_pq
+    idxgen-ivf-pq.cpp
+)
+target_include_directories(idxgen_ivf_pq PRIVATE
+    ${CMAKE_SOURCE_DIR}/../faiss
+)
+target_link_directories(idxgen_ivf_pq PRIVATE
+    ${CMAKE_SOURCE_DIR}/../faiss-builds/cpu-debug-cpp/faiss
+)
+target_link_libraries(idxgen_ivf_pq PRIVATE
+    faiss
+    OpenMP::OpenMP_CXX
+    ${BLAS_LIBRARIES}
+    ${LAPACK_LIBRARIES}
+)
+
+# idxgen-ivf-flat
+add_executable(idxgen_hnsw
+    idxgen-hnsw.cpp
+)
+target_include_directories(idxgen_hnsw PRIVATE
+    ${CMAKE_SOURCE_DIR}/../faiss
+)
+target_link_directories(idxgen_hnsw PRIVATE
+    ${CMAKE_SOURCE_DIR}/../faiss-builds/cpu-debug-cpp/faiss
+)
+target_link_libraries(idxgen_hnsw PRIVATE
+    faiss
+    OpenMP::OpenMP_CXX
+    ${BLAS_LIBRARIES}
+    ${LAPACK_LIBRARIES}
+)
