@@ -7,8 +7,14 @@
 // Objective: To geerate a common query batch for all benchmarks
 
 int main(int argc, char** argv){
-    int nq = 1;
+    int nq;
     int32_t n, d;
+
+    if(argc != 2){
+        std::cerr << "Incorrect syntax: query_gen <nq>\n";
+        return -1;
+    }
+    nq = std::stoi(argv[1]);
 
     std::ifstream in("./../datasets/wikiall/base.1M.fbin", std::ios::binary);
     std::cout << "Reading dataset from disk..." << std::endl;
@@ -23,11 +29,6 @@ int main(int argc, char** argv){
     std::cout << "Read time: "
               << std::chrono::duration<double>(t1 - t0).count()
               << " s\n";
-
-    if (argc < 2)
-        std::cout << "No. of queries not specified. Defaulting to single query." << std::endl;
-    else
-        nq = std::stoi(argv[1]);
     
     std::vector<float> xq(static_cast<size_t>(nq * d));
     std::mt19937 gen(std::random_device{}());

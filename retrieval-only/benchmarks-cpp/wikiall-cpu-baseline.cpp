@@ -6,6 +6,7 @@
 #include <cstring>
 #include <chrono>
 #include <iostream>
+#include <filesystem>
 
 // Syntax: wikiall_cpu_flat <k> <iter>
 int main(int argc, char** argv) {
@@ -14,7 +15,7 @@ int main(int argc, char** argv) {
     int k;
     int iter;
     if(argc < 3){
-        std::cerr << "Syntax error. Parameters not specified. Correct syntax: wikiall_cpu_flat <k> <iter>\n";
+        std::cerr << "Incorrect syntax: wikiall_cpu_flat <k> <iter>\n";
         return -1;
     }
     else{
@@ -35,15 +36,6 @@ int main(int argc, char** argv) {
     std::cout << "Index read time: "
               << std::chrono::duration<double>(t1 - t0).count()
               << " s\n";
-
-    // std::mt19937 gen(std::random_device{}());
-    // std::uniform_int_distribution<int> dist(0,(int)n-1);  // integers in [0, 99]
-
-    // std::vector<float> xq(static_cast<size_t>(nq) * d);
-    // Not using random sampling anymore
-    // for (int i = 0; i < nq; ++i) {
-    //     memcpy(xq.data() + i * d, xb.data() + dist(gen) * d, d * sizeof(float));
-    // }
 
     std::ifstream qrystrm("./query.fbin",std::ios::binary);
     auto t2 = std::chrono::high_resolution_clock::now();
@@ -113,7 +105,31 @@ int main(int argc, char** argv) {
     std::cout << "Mean Throughput: " << avgthr << "qps" << std::endl;
 
     std::ofstream baseres("./baseline-res.fbin",std::ios::binary);
-    std::cout << "Writing results to disk..." << std::endl;
+    bool new_file = !std::filesystem::exists("./stats.csv");
+    std::ofstream stats("./stats.csv",std::ios::app);
+    if(new_file)
+        stats << "index,nq,k,nlist,nprobe,nbits,m,M,efConstruction,efSearch,p50lat,p90lat,p95lat,p99lat,avglat,peakQPS,avgQPS,peakrecall,avgrecall\n";
+
+    stats << "baseline,";       // index   
+    stats << nq << ",";         // nq
+    stats << k << ",";          // k
+    stats << ",";               // nlist
+    stats << ",";               // nprobe
+    stats << ",";               // nbits
+    stats << ",";               // m
+    stats << ",";               // M
+    stats << ",";               // efConstruction
+    stats << ",";               // efSearch
+    stats << p50lat << ",";     // p50lat  
+    stats << p90lat << ",";     // p90lat
+    stats << p95lat << ",";     // p95lat
+    stats << p99lat << ",";     // p99lat
+    stats << avglat << ",";     // avglat
+    stats << peakthr << ",";    // peakqps
+    stats << avgthr << ",";     // avgqps
+    stats << 1.0 << ",";        // peakrecall
+    stats << 1.0 << "\n";        // avgrecall
+
     /*
     Results format:
     <iter>
@@ -121,17 +137,12 @@ int main(int argc, char** argv) {
     <labels>
     <stats>
     */
+    std::cout << "Writing results to disk..." << std::endl;
     auto t4 = std::chrono::high_resolution_clock::now();
     baseres.write(reinterpret_cast<char*>(&k), sizeof(int));
     baseres.write(reinterpret_cast<char*>(&iter), sizeof(int));
     baseres.write(reinterpret_cast<char*>(labels.data()), sizeof(faiss::idx_t)*labels.size());
-    baseres.write(reinterpret_cast<char*>(&p50lat), sizeof(double));
-    baseres.write(reinterpret_cast<char*>(&p90lat), sizeof(double));
-    baseres.write(reinterpret_cast<char*>(&p95lat), sizeof(double));
-    baseres.write(reinterpret_cast<char*>(&p99lat), sizeof(double));
-    baseres.write(reinterpret_cast<char*>(&avglat), sizeof(double));
-    baseres.write(reinterpret_cast<char*>(&peakthr), sizeof(double));
-    baseres.write(reinterpret_cast<char*>(&avgthr), sizeof(double));
+    
     auto t5 = std::chrono::high_resolution_clock::now();
     std::cout << "Results writing complete!\n";
     std::cout << "Write time: " << std::chrono::duration<double>(t5 - t4).count() << " s\n";

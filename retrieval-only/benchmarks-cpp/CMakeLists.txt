@@ -27,17 +27,17 @@ target_link_libraries(toy_cpu_flat PRIVATE
     ${LAPACK_LIBRARIES}
 )
 
-# wikiall-cpu-flat
-add_executable(wikiall_cpu_flat
-    wikiall-cpu-flat.cpp
+# wikiall-cpu-baseline
+add_executable(wikiall_cpu_baseline
+    wikiall-cpu-baseline.cpp
 )
-target_include_directories(wikiall_cpu_flat PRIVATE
+target_include_directories(wikiall_cpu_baseline PRIVATE
     ${CMAKE_SOURCE_DIR}/../faiss
 )
-target_link_directories(wikiall_cpu_flat PRIVATE
+target_link_directories(wikiall_cpu_baseline PRIVATE
     ${CMAKE_SOURCE_DIR}/../faiss-builds/cpu-debug-cpp/faiss
 )
-target_link_libraries(wikiall_cpu_flat PRIVATE
+target_link_libraries(wikiall_cpu_baseline PRIVATE
     faiss
     OpenMP::OpenMP_CXX
     ${BLAS_LIBRARIES}

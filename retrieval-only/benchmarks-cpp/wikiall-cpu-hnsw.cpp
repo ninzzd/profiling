@@ -8,17 +8,20 @@
 #include <iostream>
 #include <algorithm>
 #include <cmath>
-// Usage: ./wikiall-cpu-ivf-flat <mode> <num_iterations>
 int main(int argc, char** argv) {
     int n, d;
     int nq, dq;
     int iter;
     int k;
 
-    // Tunable HNSW specific params (will enable sweep later)
-    int efConstruction = 200;
-    int efSearch = 64;
-    int M = 16;       // number of neighbours per node at layer 0 (bottom layer)
+    // Tunable HNSW specific params (input args, sweep done through bash script)
+    if (argc != 4){
+        std::cerr << "Incorrect syntax: wikiall_cpu_hnsw <efConstruction> <efSearch> <M>\n";
+        return -1;
+    }
+    int efConstruction = std::stoi(argv[1]);
+    int efSearch = std::stoi(argv[2]);
+    int M = std::stoi(argv[3]);       // number of neighbours per node at layer 0 (bottom layer)
 
     std::cout << "HNSW Properties:" << std::endl;
     std::cout << "efConstruction: " << efConstruction << std::endl;
@@ -155,21 +158,30 @@ int main(int argc, char** argv) {
     // for(int i = 0;i < k;i++){
     //     std::cout << labels[i] << " ";
     // }
+    std::cout << "Writing stats...\n";
     start = std::chrono::high_resolution_clock::now();
-    std::ofstream hnswres("./hnswflat-res.fbin",std::ios::binary);
-    hnswres.write(reinterpret_cast<char*>(&efConstruction), sizeof(int));
-    hnswres.write(reinterpret_cast<char*>(&efSearch), sizeof(int));
-    hnswres.write(reinterpret_cast<char*>(&M), sizeof(int));
-    hnswres.write(reinterpret_cast<char*>(labels.data()), sizeof(faiss::idx_t)*labels.size());
-    hnswres.write(reinterpret_cast<char*>(&p50lat), sizeof(double));
-    hnswres.write(reinterpret_cast<char*>(&p90lat), sizeof(double));
-    hnswres.write(reinterpret_cast<char*>(&p95lat), sizeof(double));
-    hnswres.write(reinterpret_cast<char*>(&p99lat), sizeof(double));
-    hnswres.write(reinterpret_cast<char*>(&avglat), sizeof(double));
-    hnswres.write(reinterpret_cast<char*>(&peakthr), sizeof(double));
-    hnswres.write(reinterpret_cast<char*>(&avgthr), sizeof(double));
+    std::ofstream stats("./stats.csv",std::ios::app);
+    stats << "hnsw,";       // index   
+    stats << nq << ",";         // nq
+    stats << k << ",";          // k
+    stats << ",";               // nlist
+    stats << ",";               // nprobe
+    stats << ",";               // nbits
+    stats << ",";               // m
+    stats << M << ",";               // M
+    stats << efConstruction << ",";               // efConstruction
+    stats << efSearch << ",";               // efSearch
+    stats << p50lat << ",";     // p50lat  
+    stats << p90lat << ",";     // p90lat
+    stats << p95lat << ",";     // p95lat
+    stats << p99lat << ",";     // p99lat
+    stats << avglat << ",";     // avglat
+    stats << peakthr << ",";    // peakqps
+    stats << avgthr << ",";     // avgqps
+    stats << peakrcl << ",";        // peakrecall
+    stats << avgrcl << "\n";        // avgrecall
     end = std::chrono::high_resolution_clock::now();
-    std::cout << "Results writing complete!\n";
+    std::cout << "Stats writing complete!\n";
     std::cout << "Write time: " << std::chrono::duration<double>(end - start).count() << " s\n";
 
     return 0;

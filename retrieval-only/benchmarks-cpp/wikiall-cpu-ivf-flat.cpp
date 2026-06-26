@@ -9,16 +9,19 @@
 #include <iostream>
 #include <algorithm>
 #include <cmath>
-// Usage: ./wikiall-cpu-ivf-flat <mode> <num_iterations>
 int main(int argc, char** argv) {
     int n, d;
     int nq, dq;
     int iter;
     int k;
 
-    // Tunable IVF flat specific params (will enable sweep later)
-    int nlist = 2048;
-    int nprobe = 36;
+    // Tunable IVF flat specific params
+    if (argc != 3){
+        std::cerr << "Incorrect syntax: wikiall_cpu_ivf_flat <nlist> <nprobe>\n";
+        return -1;
+    }
+    int nlist = std::stoi(argv[1]);
+    int nprobe = std::stoi(argv[2]);
     
 
     std::cout << "IVF-Flat Properties:" << std::endl;
@@ -161,20 +164,30 @@ int main(int argc, char** argv) {
     // for(int i = 0;i < k;i++){
     //     std::cout << labels[i] << " ";
     // }
+    std::cout << "Writing stats...\n";
     start = std::chrono::high_resolution_clock::now();
-    std::ofstream ivfres("./ivfflat-res.fbin",std::ios::binary);
-    ivfres.write(reinterpret_cast<char*>(&nlist), sizeof(int));
-    ivfres.write(reinterpret_cast<char*>(&nprobe), sizeof(int));
-    ivfres.write(reinterpret_cast<char*>(labels.data()), sizeof(faiss::idx_t)*labels.size());
-    ivfres.write(reinterpret_cast<char*>(&p50lat), sizeof(double));
-    ivfres.write(reinterpret_cast<char*>(&p90lat), sizeof(double));
-    ivfres.write(reinterpret_cast<char*>(&p95lat), sizeof(double));
-    ivfres.write(reinterpret_cast<char*>(&p99lat), sizeof(double));
-    ivfres.write(reinterpret_cast<char*>(&avglat), sizeof(double));
-    ivfres.write(reinterpret_cast<char*>(&peakthr), sizeof(double));
-    ivfres.write(reinterpret_cast<char*>(&avgthr), sizeof(double));
+    std::ofstream stats("./stats.csv",std::ios::app);
+    stats << "ivf-flat,";       // index   
+    stats << nq << ",";         // nq
+    stats << k << ",";          // k
+    stats << nlist << ",";               // nlist
+    stats << nprobe << ",";               // nprobe
+    stats << ",";               // nbits
+    stats << ",";               // m
+    stats << ",";               // M
+    stats << ",";               // efConstruction
+    stats << ",";               // efSearch
+    stats << p50lat << ",";     // p50lat  
+    stats << p90lat << ",";     // p90lat
+    stats << p95lat << ",";     // p95lat
+    stats << p99lat << ",";     // p99lat
+    stats << avglat << ",";     // avglat
+    stats << peakthr << ",";    // peakqps
+    stats << avgthr << ",";     // avgqps
+    stats << peakrcl << ",";        // peakrecall
+    stats << avgrcl << "\n";        // avgrecall
     end = std::chrono::high_resolution_clock::now();
-    std::cout << "Results writing complete!\n";
+    std::cout << "Stats writing complete!\n";
     std::cout << "Write time: " << std::chrono::duration<double>(end - start).count() << " s\n";
 
     return 0;

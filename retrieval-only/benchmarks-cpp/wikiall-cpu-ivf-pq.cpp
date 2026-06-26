@@ -16,11 +16,15 @@ int main(int argc, char** argv) {
     int iter;
     int k;
 
-    // Tunable IVF flat specific params (will enable sweep later)
-    int nlist = 2048;
-    int nprobe = 36;
-    int nbits = 8;
-    int m = 48;
+    // Tunable IVF flat specific params (exposed as args, swept by bash script)
+    if(argc != 5){
+        std::cerr << "Incorrect syntax: wikiall_cpu_ivf_pq <nlist> <nprobe> <nbits> <m>\n";
+        return -1;
+    }
+    int nlist = std::stoi(argv[1]);
+    int nprobe = std::stoi(argv[2]);;
+    int nbits = std::stoi(argv[3]);;
+    int m = std::stoi(argv[4]);
     
 
     std::cout << "IVF-PQ Properties:" << std::endl;
@@ -145,7 +149,8 @@ int main(int argc, char** argv) {
     double peakrcl = *std::max_element(recall.begin(),recall.end());
     double avgrcl = std::accumulate(recall.begin(),recall.end(),0.0)/(double)nq;
 
-    
+    // std::cout << "---debug---\n";
+    // std::cout << index.pq.code_size << "\n";
     std::cout << "P50 Latency: " << p50lat << "s" << std::endl;
     std::cout << "P90 Latency: " << p90lat << "s" << std::endl;
     std::cout << "P95 Latency: " << p95lat << "s" << std::endl;
@@ -167,22 +172,30 @@ int main(int argc, char** argv) {
     // for(int i = 0;i < k;i++){
     //     std::cout << labels[i] << " ";
     // }
+    std::cout << "Writing stats...\n";
     start = std::chrono::high_resolution_clock::now();
-    std::ofstream ivfres("./ivfpq-res.fbin",std::ios::binary);
-    ivfres.write(reinterpret_cast<char*>(&nlist), sizeof(int));
-    ivfres.write(reinterpret_cast<char*>(&nprobe), sizeof(int));
-    ivfres.write(reinterpret_cast<char*>(&nbits), sizeof(int));
-    ivfres.write(reinterpret_cast<char*>(&m), sizeof(int));
-    ivfres.write(reinterpret_cast<char*>(labels.data()), sizeof(faiss::idx_t)*labels.size());
-    ivfres.write(reinterpret_cast<char*>(&p50lat), sizeof(double));
-    ivfres.write(reinterpret_cast<char*>(&p90lat), sizeof(double));
-    ivfres.write(reinterpret_cast<char*>(&p95lat), sizeof(double));
-    ivfres.write(reinterpret_cast<char*>(&p99lat), sizeof(double));
-    ivfres.write(reinterpret_cast<char*>(&avglat), sizeof(double));
-    ivfres.write(reinterpret_cast<char*>(&peakthr), sizeof(double));
-    ivfres.write(reinterpret_cast<char*>(&avgthr), sizeof(double));
+    std::ofstream stats("./stats.csv",std::ios::app);
+    stats << "ivf-pq,";       // index   
+    stats << nq << ",";         // nq
+    stats << k << ",";          // k
+    stats << nlist << ",";               // nlist
+    stats << nprobe << ",";               // nprobe
+    stats << nbits << ",";               // nbits
+    stats << m << ",";               // m
+    stats << ",";               // M
+    stats << ",";               // efConstruction
+    stats << ",";               // efSearch
+    stats << p50lat << ",";     // p50lat  
+    stats << p90lat << ",";     // p90lat
+    stats << p95lat << ",";     // p95lat
+    stats << p99lat << ",";     // p99lat
+    stats << avglat << ",";     // avglat
+    stats << peakthr << ",";    // peakqps
+    stats << avgthr << ",";     // avgqps
+    stats << peakrcl << ",";        // peakrecall
+    stats << avgrcl << "\n";        // avgrecall
     end = std::chrono::high_resolution_clock::now();
-    std::cout << "Results writing complete!\n";
+    std::cout << "Stats writing complete!\n";
     std::cout << "Write time: " << std::chrono::duration<double>(end - start).count() << " s\n";
 
     return 0;

@@ -10,3 +10,4 @@ retrieval-only/faiss-builds
 datasets/
 **.fbin
 **.data
+**.csv
