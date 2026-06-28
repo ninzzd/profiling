@@ -1,6 +1,10 @@
 #!/bin/bash
 
 querygen=./build/query_gen
+idxgen_base=./build/idxgen_baseline
+idxgen_hnsw=./build/idxgen_hnsw
+idxgen_ivf_flat=./build/idxgen_ivf_flat
+idxgen_ivf_pq=./build/idxgen_ivf_pq
 base=./build/wikiall_cpu_baseline
 hnsw=./build/wikiall_cpu_hnsw
 ivf_flat=./build/wikiall_cpu_ivf_flat
@@ -21,23 +25,37 @@ nprobe=32
 nbits=8
 m=64
 
+# building indexes
+echo "Building indexes..."
+$idxgen_base > /dev/null & \
+$idxgen_hnsw $efconstruction $efsearch $M > /dev/null & \
+$idxgen_ivf_flat $nlist $nprobe > /dev/null & \
+$idxgen_ivf_pq $nlist $nprobe $nbits $m > /dev/null
+wait
+echo "Build complete"
+
 # sweep array
 batches=(1 2 4 8 16 32 64 128 256 512 1024)
+rm -rf ./queries
+rm -rf ./gt
 
 start=$(date +%s%N)
 for nq in "${batches[@]}"
 do
     echo "Running nq=$nq"
 
-    $querygen $nq > /dev/null
+    $querygen $nq $k $iter > /dev/null
 
-    $base $k $iter > /dev/null
+    $base $iter > /dev/null
 
-    $hnsw $efconstruction $efsearch $M > /dev/null
+    $hnsw $iter > /dev/null
 
-    $ivf_flat $nlist $nprobe > /dev/null
+    $ivf_flat $iter > /dev/null
 
-    $ivf_pq $nlist $nprobe $nbits $m > /dev/null
+    $ivf_pq $iter > /dev/null
+
+    rm -rf ./queries
+    rm -rf ./gt
 
 done
 end=$(date +%s%N)

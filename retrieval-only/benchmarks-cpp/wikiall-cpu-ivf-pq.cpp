@@ -2,155 +2,114 @@
 #include <vector>
 #include <cstdint>
 #include <random>
-#include <faiss/IndexFlat.h>
 #include <faiss/IndexIVFPQ.h>
+#include <faiss/index_io.h>
+#include <sstream>
 #include <cstring>
 #include <chrono>
 #include <iostream>
-#include <algorithm>
-#include <cmath>
-// Usage: ./wikiall-cpu-ivf-flat <mode> <num_iterations>
-int main(int argc, char** argv) {
-    int n, d;
+#include <filesystem>
+
+// Syntax: wikiall_cpu_flat <k> <iter>
+int readQuery(int n, int d, std::string qryfbin, std::string gtfbin, int &k, std::vector<float> &xq, std::vector<uint32_t> &xgt){
     int nq, dq;
-    int iter;
-    int k;
-
-    // Tunable IVF flat specific params (exposed as args, swept by bash script)
-    if(argc != 5){
-        std::cerr << "Incorrect syntax: wikiall_cpu_ivf_pq <nlist> <nprobe> <nbits> <m>\n";
-        return -1;
-    }
-    int nlist = std::stoi(argv[1]);
-    int nprobe = std::stoi(argv[2]);;
-    int nbits = std::stoi(argv[3]);;
-    int m = std::stoi(argv[4]);
+    int ngt;
+    std::ifstream qrystrm(qryfbin,std::ios::binary);
+    std::ifstream gtstrm(gtfbin,std::ios::binary);
     
-
-    std::cout << "IVF-PQ Properties:" << std::endl;
-    std::cout << "nlist: " << nlist << std::endl;
-    std::cout << "nprobe: " << nprobe << std::endl;
-    std::cout << "nbits: " << nbits << std::endl;
-    std::cout << "m: " << m << std::endl;
-
-    std::ifstream in("./../datasets/wikiall/base.1M.fbin", std::ios::binary); 
-    std::cout << "Reading dataset from disk..." << std::endl;
-    auto start = std::chrono::high_resolution_clock::now(); // change wall-clock time to thread-specific/CPU counter time
-    in.read(reinterpret_cast<char*>(&n), sizeof(int32_t));
-    in.read(reinterpret_cast<char*>(&d), sizeof(int32_t));
-    std::vector<float> xb(static_cast<size_t>(n) * d);
-    in.read(reinterpret_cast<char*>(xb.data()),
-            xb.size() * sizeof(float));
-    auto end = std::chrono::high_resolution_clock::now();
-    std::cout << "Read complete!" << std::endl;
-    std::cout << "Index size: " << n << " \n";
-    std::cout << "Index dimensions:" << d << std::endl;
-    std::cout << "Read time: "
-              << std::chrono::duration<double>(end - start).count()
-              << " s\n";
-
-    // Index creation
-    faiss::IndexFlatIP quantizer(d);
-    faiss::IndexIVFPQ index( // IVF index, PQ quantization, inner-product (cosine-similarity) metric
-        &quantizer,
-        d,
-        nlist,
-        m,
-        nbits,
-        faiss::METRIC_INNER_PRODUCT
-    );
-    std::cout << "Training coarse quantizer, adding vectors to the IVF-PQ index..." << std::endl;
-    start = std::chrono::high_resolution_clock::now();
-    index.train(n,xb.data());
-    index.add(n, xb.data());
-    end = std::chrono::high_resolution_clock::now();
-    index.nprobe = nprobe;
-    std::cout << "Index created!" << std::endl;
-    std::cout << "Index creation latency: "
-              << std::chrono::duration<double>(end - start).count()
-              << " s\n";
-    
-    // Query read
-    std::ifstream qrystrm("./query.fbin",std::ios::binary); // make this an exec arg (argv), different procs run on different query batches simultaneously
-    start = std::chrono::high_resolution_clock::now();
     if(!qrystrm){
         std::cerr << "Query file not found" << std::endl;
-        return -1;
+        exit(-1);
     }
+    if(!gtstrm){
+        std::cerr << "Groundtruth file not found" << std::endl;
+        exit(-1);
+    }
+    auto start = std::chrono::high_resolution_clock::now();
     qrystrm.read(reinterpret_cast<char*>(&nq), sizeof(int32_t));
     qrystrm.read(reinterpret_cast<char*>(&dq), sizeof(int32_t));
-    if(dq != d){
-        std::cerr << "Incompatable query: dimension mismatch" << std::endl;
+    gtstrm.read(reinterpret_cast<char*>(&ngt), sizeof(uint32_t));
+    gtstrm.read(reinterpret_cast<char*>(&k), sizeof(uint32_t));
+    assert(nq <= n);
+    assert(ngt == nq);
+    assert(d == dq);
+    xq = std::vector<float>(static_cast<size_t>(nq*d));
+    xgt = std::vector<uint32_t>(static_cast<size_t>(nq*k));
+    qrystrm.read(reinterpret_cast<char*>(xq.data()),xq.size()*sizeof(float));
+    gtstrm.read(reinterpret_cast<char*>(xgt.data()),xgt.size()*sizeof(uint32_t));
+    auto end = std::chrono::high_resolution_clock::now();
+    return nq;
+}
+int main(int argc, char** argv) {
+    int nq;
+    int k;
+    int nb;
+    if(argc != 2){
+        std::cerr << "Incorrect syntax: wikiall_cpu_ivf_pq <nb>\n";
         return -1;
     }
-    std::vector<float> xq(static_cast<size_t>(nq*d));
-    qrystrm.read(reinterpret_cast<char*>(xq.data()),xq.size()*sizeof(float));
-    end = std::chrono::high_resolution_clock::now();
-    std::cout << "Query read complete!" << std::endl;
-    std::cout << "Query read time: "
-              << std::chrono::duration<double>(end - start).count()
-              << " s\n";
-    std::cout << "Query batch size: " << nq << std::endl;
 
-    // Baseline results read
-    std::cout << "Reading baseline results...\n";
-    start = std::chrono::high_resolution_clock::now();
-    std::ifstream baseres("./baseline-res.fbin",std::ios::binary); // make this also an arg, depends on query batch size anyways
-    baseres.read(reinterpret_cast<char*>(&k), sizeof(int));
-    baseres.read(reinterpret_cast<char*>(&iter), sizeof(int));
-    std::vector<faiss::idx_t> base_labels(nq*k);
-    baseres.read(reinterpret_cast<char*>(base_labels.data()), sizeof(faiss::idx_t)*nq*k);
-    end = std::chrono::high_resolution_clock::now();
-    std::cout << "Baseline results read complete!\n";
-    std::cout << "Read time: " << std::chrono::duration<double>(end - start).count() << " s\n";
+    nb = std::stoi(argv[1]);
 
-    std::vector<double> latvec;
-    std::vector<double> thrvec;
-    std::vector<faiss::idx_t> labels(static_cast<size_t>(nq) * k);
-    std::vector<float> distances(static_cast<size_t>(nq) * k);
-
-    for(int i = 1;i <= iter;i++){
-        auto t8 = std::chrono::high_resolution_clock::now();
-        index.search(nq, xq.data(), k, distances.data(), labels.data());
-        auto t9 = std::chrono::high_resolution_clock::now();
-        double lat = std::chrono::duration<double>(t9 - t8).count();
-        double thr = nq/lat;
-        latvec.push_back(lat);
-        thrvec.push_back(thr);
+    faiss::Index* base = faiss::read_index("./cpu-ivf-pq.index");
+    auto* index = dynamic_cast<faiss::IndexIVFPQ*>(base);
+    if (!index) {
+        std::cerr << "Failed to load baseline index.\n";
+        return -1;
     }
     
+    std::vector<double> latvec;
+    std::vector<double> thpvec;
+    std::vector<double> rclvec;
 
-    // Latency and throughput calculation
-    std::sort(latvec.begin(),latvec.end());
-    double p50lat = latvec[(int)floor(iter/2.0)];
-    double p90lat = latvec[(int)floor(9.0*iter/10.0)];
-    double p95lat = latvec[(int)floor(9.5*iter/10.0)];
-    double p99lat = latvec[(int)floor(9.9*iter/10.0)];
-    double avglat = std::accumulate(latvec.begin(),latvec.end(),0.0)/iter;
-    double peakthr = *std::max_element(thrvec.begin(),thrvec.end());
-    double avgthr = std::accumulate(thrvec.begin(),thrvec.end(),0.0)/iter;
+    
 
-    // Recall calculation
-    std::vector<double> recall(nq);
-    for(int i = 0;i < nq;i++){
-        std::vector<faiss::idx_t> baseqres(k);
-        std::vector<faiss::idx_t> qres(k);
-        memcpy(baseqres.data(),base_labels.data()+i*k,sizeof(faiss::idx_t)*k);
-        memcpy(qres.data(),labels.data()+i*k,sizeof(faiss::idx_t)*k);
-        recall[i] = 0.0f;
-        for(int j = 0;j < k;j++){
-            auto it = std::find(baseqres.begin(),baseqres.end(),qres[j]);
-            if(it != baseqres.end()){
-                recall[i] += 1.0f;
+    for(int i = 1;i <= nb;i++){
+        std::stringstream qryfbin;
+        std::stringstream gtfbin;
+        std::vector<float> xq;
+        std::vector<uint32_t> xgt;
+        qryfbin << "./queries/query" << i << ".fbin";
+        gtfbin << "./gt/gt" << i << ".fbin";
+        nq = readQuery(index->ntotal,index->d,qryfbin.str(),gtfbin.str(),k,xq,xgt);
+
+        std::vector<faiss::idx_t> labels(static_cast<size_t>(nq) * k);
+        std::vector<float> distances(static_cast<size_t>(nq) * k);
+
+        auto start = std::chrono::high_resolution_clock::now();
+        index->search(nq, xq.data(), k, distances.data(), labels.data());
+        auto end = std::chrono::high_resolution_clock::now();
+        double lat = std::chrono::duration<double>(end - start).count();
+        double thp = nq/lat;
+        double rcl = 0.0;
+        for (int q = 0; q < nq; q++) {
+            double qrcl = 0.0;
+            for (int j = 0; j < k; j++) {
+                auto begin = xgt.begin() + q * k;
+                auto end   = begin + k;
+                if (std::find(begin, end,
+                            static_cast<uint32_t>(labels[q * k + j])) != end)
+                    qrcl++;
             }
+            rcl += qrcl / k;
         }
-        recall[i] /= (double)k;
+        rcl /= nq;
+        latvec.push_back(lat);
+        thpvec.push_back(thp);
+        rclvec.push_back(rcl);
     }
-    double peakrcl = *std::max_element(recall.begin(),recall.end());
-    double avgrcl = std::accumulate(recall.begin(),recall.end(),0.0)/(double)nq;
+    std::sort(latvec.begin(),latvec.end());
+    double p50lat = latvec[(int)floor(nb/2.0)];
+    double p90lat = latvec[(int)floor(9.0*nb/10.0)];
+    double p95lat = latvec[(int)floor(9.5*nb/10.0)];
+    double p99lat = latvec[(int)floor(9.9*nb/10.0)];
+    double avglat = std::accumulate(latvec.begin(),latvec.end(),0.0)/nb;
+    double peakthr = *std::max_element(thpvec.begin(),thpvec.end());
+    double avgthr = std::accumulate(thpvec.begin(),thpvec.end(),0.0)/nb;
+    double peakrcl = *std::max_element(rclvec.begin(),rclvec.end());
+    double avgrcl = std::accumulate(rclvec.begin(),rclvec.end(),0.0)/nb;
 
-    // std::cout << "---debug---\n";
-    // std::cout << index.pq.code_size << "\n";
+    // std::cout << std::fixed << std::setprecision(9);
     std::cout << "P50 Latency: " << p50lat << "s" << std::endl;
     std::cout << "P90 Latency: " << p90lat << "s" << std::endl;
     std::cout << "P95 Latency: " << p95lat << "s" << std::endl;
@@ -158,30 +117,22 @@ int main(int argc, char** argv) {
     std::cout << "Mean Latency: " << avglat << "s" << std::endl;
     std::cout << "Peak Throughput: " << peakthr << "qps" << std::endl;
     std::cout << "Mean Throughput: " << avgthr << "qps" << std::endl;
-    std::cout << "Peak recall@" << k << ": " << peakrcl*100.0 << "%" << std::endl;
-    std::cout << "Mean recall@"<< k << ": " << avgrcl*100.0 << "%" << std::endl;
+    std::cout << "Peak Recall: " << peakrcl*100.0 << "%" << std::endl;
+    std::cout << "Mean Recall: " << avgrcl*100.0 << "%" << std::endl;
 
-    // Label comparison test
-    // std::cout << "\nSample labels (query0):\n";
-    // std::cout << "\nBaseline:\n";
-    // for(int i = 0;i < k;i++){
-    //     std::cout << base_labels[i] << " ";
-    // }
-    // std::cout << std::endl;
-    // std::cout << "\bHNSW Flat:\n";
-    // for(int i = 0;i < k;i++){
-    //     std::cout << labels[i] << " ";
-    // }
-    std::cout << "Writing stats...\n";
-    start = std::chrono::high_resolution_clock::now();
+    std::ofstream baseres("./baseline-res.fbin",std::ios::binary);
+    bool new_file = !std::filesystem::exists("./stats.csv");
     std::ofstream stats("./stats.csv",std::ios::app);
-    stats << "ivf-pq,";       // index   
+    if(new_file)
+        stats << "index,nq,k,nlist,nprobe,nbits,m,M,efConstruction,efSearch,p50lat,p90lat,p95lat,p99lat,avglat,peakQPS,avgQPS,peakrecall,avgrecall\n";
+
+    stats << "cpu-ivf-pq,";       // index   
     stats << nq << ",";         // nq
     stats << k << ",";          // k
-    stats << nlist << ",";               // nlist
-    stats << nprobe << ",";               // nprobe
-    stats << nbits << ",";               // nbits
-    stats << m << ",";               // m
+    stats << index->nlist << ",";               // nlist
+    stats << index->nprobe << ",";               // nprobe
+    stats << index->pq.nbits << ",";               // nbits
+    stats << index->pq.M << ",";               // m
     stats << ",";               // M
     stats << ",";               // efConstruction
     stats << ",";               // efSearch
@@ -194,9 +145,5 @@ int main(int argc, char** argv) {
     stats << avgthr << ",";     // avgqps
     stats << peakrcl << ",";        // peakrecall
     stats << avgrcl << "\n";        // avgrecall
-    end = std::chrono::high_resolution_clock::now();
-    std::cout << "Stats writing complete!\n";
-    std::cout << "Write time: " << std::chrono::duration<double>(end - start).count() << " s\n";
-
     return 0;
 }

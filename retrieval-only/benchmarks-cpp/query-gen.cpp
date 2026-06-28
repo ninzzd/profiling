@@ -1,5 +1,6 @@
 #include <fstream>
 #include <sstream>
+#include <filesystem>
 #include <iostream>
 #include <vector>
 #include <chrono>
@@ -10,8 +11,8 @@
 // Objective: To geerate a common query batch for all benchmarks
 
 int main(int argc, char** argv){
-    int nq, nb; // batch size, no. of distinct batches
-    int n, d, k; // total number of query vectors, dimensions and top-k
+    uint32_t nq, nb; // batch size, no. of distinct batches
+    uint32_t n, d, k; // total number of query vectors, dimensions and top-k
     uint32_t ngt, kgt; // no. of groundtruth entries, no. of labels per entry
 
     if(argc != 4){
@@ -73,13 +74,17 @@ int main(int argc, char** argv){
         std::stringstream qryfname;
         std::stringstream gtfname;
 
-        qryfname << "query" << i << ".fbin";
-        gtfname << "gt" << i << ".fbin";
+
+        std::filesystem::create_directories("./queries");
+        std::filesystem::create_directories("./gt");
+
+        qryfname << "./queries/query" << i << ".fbin";
+        gtfname << "./gt/gt" << i << ".fbin";
 
         std::ofstream qryout(qryfname.str(),std::ios::binary);
         std::ofstream gtout(gtfname.str(),std::ios::binary);
-        qryout.write(reinterpret_cast<char*>(&nq), sizeof(int));
-        qryout.write(reinterpret_cast<char*>(&d), sizeof(int));
+        qryout.write(reinterpret_cast<char*>(&nq), sizeof(uint32_t));
+        qryout.write(reinterpret_cast<char*>(&d), sizeof(uint32_t));
         qryout.write(reinterpret_cast<char*>(xq.data()), static_cast<size_t>(nq*d*sizeof(float)));
         gtout.write(reinterpret_cast<char*>(&nq), sizeof(uint32_t));
         gtout.write(reinterpret_cast<char*>(&k), sizeof(uint32_t));

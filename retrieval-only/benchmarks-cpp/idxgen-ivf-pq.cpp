@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
     std::cout << "Building IVF-PQ index...\n";
     start = std::chrono::high_resolution_clock::now();
     faiss::IndexFlatIP cq(d);
-    faiss::IndexIVFPQ index(&cq,d,nlist,m,nbits,faiss::METRIC_INNER_PRODUCT);
+    faiss::IndexIVFPQ index(&cq,d,nlist,m,nbits,faiss::METRIC_L2);
     index.nprobe = nprobe;
     index.train(n, xb.data());
     index.add(n, xb.data());

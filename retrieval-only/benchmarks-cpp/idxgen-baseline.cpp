@@ -32,7 +32,7 @@ int main() {
     // Building faiss index object
     std::cout << "Building FlatIP index...\n";
     start = std::chrono::high_resolution_clock::now();
-    faiss::IndexFlatIP index(d);
+    faiss::IndexFlatL2 index(d);
     index.add(n, xb.data());
     end = std::chrono::high_resolution_clock::now();
     std::cout << "Build complete!\n";

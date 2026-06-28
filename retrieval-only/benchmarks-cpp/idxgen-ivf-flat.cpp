@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
     std::cout << "Building IVF-Flat index...\n";
     start = std::chrono::high_resolution_clock::now();
     faiss::IndexFlatIP cq(d);
-    faiss::IndexIVFFlat index(&cq,d,nlist,faiss::METRIC_INNER_PRODUCT);
+    faiss::IndexIVFFlat index(&cq,d,nlist,faiss::METRIC_L2);
     index.nprobe = nprobe;
     index.train(n, xb.data());
     index.add(n, xb.data());
@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
     // Writing index to .fbin file
     std::cout << "Writing index to disk...\n";
     start = std::chrono::high_resolution_clock::now();
-    faiss::write_index(&index, "./cpu-hnsw.index");
+    faiss::write_index(&index, "./cpu-ivf-flat.index");
     end = std::chrono::high_resolution_clock::now();
     std::cout << "Write time: "
               << std::chrono::duration<double>(end - start).count()

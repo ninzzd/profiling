@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
     // Building faiss index object
     std::cout << "Building HNSW index...\n";
     start = std::chrono::high_resolution_clock::now();
-    faiss::IndexHNSW index(d,M,faiss::METRIC_INNER_PRODUCT);
+    faiss::IndexHNSWFlat index(d,M,faiss::METRIC_L2);
     index.hnsw.efConstruction = efcons;
     index.hnsw.efSearch = efsearch;
     index.add(n, xb.data());

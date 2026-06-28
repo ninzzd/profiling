@@ -148,7 +148,7 @@ target_link_libraries(idxgen_ivf_pq PRIVATE
 
 # idxgen-ivf-flat
 add_executable(idxgen_ivf_flat
-    idxgen-hnsw.cpp
+    idxgen-ivf-flat.cpp
 )
 target_include_directories(idxgen_ivf_flat PRIVATE
     ${CMAKE_SOURCE_DIR}/../faiss
