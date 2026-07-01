@@ -61,3 +61,5 @@ done
 end=$(date +%s%N)
 elapsed_s=$(awk "BEGIN {print ($end-$start)/1000000000}")
 echo "$elapsed_s s"
+
+trap "rm -rf ./queries; rm -rf ./gt" SIGINT SIGSTP SIGTERM EXIT

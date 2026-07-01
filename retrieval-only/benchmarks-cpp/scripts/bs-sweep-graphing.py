@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 script_dir = Path(__file__).parent.resolve()
-csv_path = script_dir / "bs-sweep-stats.csv"
+csv_path = script_dir / "../results/workload-sweep/bs-sweep-stats.csv"
 
 # Read CSV
 df = pd.read_csv(csv_path)
