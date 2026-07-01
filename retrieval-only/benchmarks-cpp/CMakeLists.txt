@@ -12,7 +12,7 @@ find_package(LAPACK REQUIRED)
 
 # toy-cpu-flat
 add_executable(toy_cpu_flat
-    toy-cpu-flat.cpp
+    src/toy-cpu-flat.cpp
 )
 target_include_directories(toy_cpu_flat PRIVATE
     ${CMAKE_SOURCE_DIR}/../faiss
@@ -29,7 +29,7 @@ target_link_libraries(toy_cpu_flat PRIVATE
 
 # wikiall-cpu-baseline
 add_executable(wikiall_cpu_baseline
-    wikiall-cpu-baseline.cpp
+    src/wikiall-cpu-baseline.cpp
 )
 target_include_directories(wikiall_cpu_baseline PRIVATE
     ${CMAKE_SOURCE_DIR}/../faiss
@@ -46,7 +46,7 @@ target_link_libraries(wikiall_cpu_baseline PRIVATE
 
 # wikiall-cpu-ivf-flat
 add_executable(wikiall_cpu_ivf_flat
-    wikiall-cpu-ivf-flat.cpp
+    src/wikiall-cpu-ivf-flat.cpp
 )
 target_include_directories(wikiall_cpu_ivf_flat PRIVATE
     ${CMAKE_SOURCE_DIR}/../faiss
@@ -63,7 +63,7 @@ target_link_libraries(wikiall_cpu_ivf_flat PRIVATE
 
 # wikiall-cpu-hnsw
 add_executable(wikiall_cpu_hnsw
-    wikiall-cpu-hnsw.cpp
+    src/wikiall-cpu-hnsw.cpp
 )
 target_include_directories(wikiall_cpu_hnsw PRIVATE
     ${CMAKE_SOURCE_DIR}/../faiss
@@ -80,7 +80,7 @@ target_link_libraries(wikiall_cpu_hnsw PRIVATE
 
 # wikiall-cpu-ivf-pq
 add_executable(wikiall_cpu_ivf_pq
-    wikiall-cpu-ivf-pq.cpp
+    src/wikiall-cpu-ivf-pq.cpp
 )
 target_include_directories(wikiall_cpu_ivf_pq PRIVATE
     ${CMAKE_SOURCE_DIR}/../faiss
@@ -97,7 +97,7 @@ target_link_libraries(wikiall_cpu_ivf_pq PRIVATE
 
 # idxgen-baseline
 add_executable(idxgen_baseline
-    idxgen-baseline.cpp
+    src/idxgen-baseline.cpp
 )
 target_include_directories(idxgen_baseline PRIVATE
     ${CMAKE_SOURCE_DIR}/../faiss
@@ -114,7 +114,7 @@ target_link_libraries(idxgen_baseline PRIVATE
 
 # idxgen-hnsw
 add_executable(idxgen_hnsw
-    idxgen-hnsw.cpp
+    src/idxgen-hnsw.cpp
 )
 target_include_directories(idxgen_hnsw PRIVATE
     ${CMAKE_SOURCE_DIR}/../faiss
@@ -131,7 +131,7 @@ target_link_libraries(idxgen_hnsw PRIVATE
 
 # idxgen-ivf-pq
 add_executable(idxgen_ivf_pq
-    idxgen-ivf-pq.cpp
+    src/idxgen-ivf-pq.cpp
 )
 target_include_directories(idxgen_ivf_pq PRIVATE
     ${CMAKE_SOURCE_DIR}/../faiss
@@ -148,7 +148,7 @@ target_link_libraries(idxgen_ivf_pq PRIVATE
 
 # idxgen-ivf-flat
 add_executable(idxgen_ivf_flat
-    idxgen-ivf-flat.cpp
+    src/idxgen-ivf-flat.cpp
 )
 target_include_directories(idxgen_ivf_flat PRIVATE
     ${CMAKE_SOURCE_DIR}/../faiss
@@ -165,7 +165,7 @@ target_link_libraries(idxgen_ivf_flat PRIVATE
 
 # query_gen
 add_executable(query_gen
-    query-gen.cpp
+    src/query-gen.cpp
 )
 target_include_directories(query_gen PRIVATE
     ${CMAKE_SOURCE_DIR}/../faiss
