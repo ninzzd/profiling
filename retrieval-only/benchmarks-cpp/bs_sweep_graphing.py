@@ -1,8 +1,12 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+from pathlib import Path
+
+script_dir = Path(__file__).parent.resolve()
+csv_path = script_dir / "bs-sweep-stats.csv"
 
 # Read CSV
-df = pd.read_csv("stats.csv")
+df = pd.read_csv(csv_path)
 
 # Index display names
 labels = {
@@ -14,9 +18,9 @@ labels = {
 
 # Metrics to plot
 plots = [
-    ("avglat", "Average Latency (s)", "latency_vs_batch_size.png"),
-    ("avgQPS", "Average Throughput (QPS)", "throughput_vs_batch_size.png"),
-    ("avgrecall", "Average Recall@10", "recall_vs_batch_size.png"),
+    ("avglat", "Average Latency (s)", script_dir / "latency_vs_batch_size.png"),
+    ("avgQPS", "Average Throughput (QPS)", script_dir / "throughput_vs_batch_size.png"),
+    ("avgrecall", "Average Recall@10", script_dir / "recall_vs_batch_size.png"),
 ]
 
 for metric, ylabel, outfile in plots:
