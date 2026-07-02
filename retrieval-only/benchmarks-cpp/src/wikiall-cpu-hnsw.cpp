@@ -99,34 +99,45 @@ int main(int argc, char** argv) {
         rclvec.push_back(rcl);
     }
     std::sort(latvec.begin(),latvec.end());
+    // latency
+    double minlat = *std::min_element(latvec.begin(),latvec.end());
     double p50lat = latvec[(int)floor(nb/2.0)];
     double p90lat = latvec[(int)floor(9.0*nb/10.0)];
-    double p95lat = latvec[(int)floor(9.5*nb/10.0)];
-    double p99lat = latvec[(int)floor(9.9*nb/10.0)];
+    // double p95lat = latvec[(int)floor(9.5*nb/10.0)]; (not required, tmi)
+    // double p99lat = latvec[(int)floor(9.9*nb/10.0)];
     double avglat = std::accumulate(latvec.begin(),latvec.end(),0.0)/nb;
-    double peakthr = *std::max_element(thpvec.begin(),thpvec.end());
+    double maxlat = *std::max_element(latvec.begin(),latvec.end());
+    // throughput
     double avgthr = std::accumulate(thpvec.begin(),thpvec.end(),0.0)/nb;
-    double peakrcl = *std::max_element(rclvec.begin(),rclvec.end());
+    
+    // recall
+    double minrcl = *std::min_element(rclvec.begin(),rclvec.end());
     double avgrcl = std::accumulate(rclvec.begin(),rclvec.end(),0.0)/nb;
+    double maxrcl = *std::max_element(rclvec.begin(),rclvec.end());
 
     // std::cout << std::fixed << std::setprecision(9);
+    std::cout << "Min Latency: " << minlat << "s" << std::endl;
     std::cout << "P50 Latency: " << p50lat << "s" << std::endl;
     std::cout << "P90 Latency: " << p90lat << "s" << std::endl;
-    std::cout << "P95 Latency: " << p95lat << "s" << std::endl;
-    std::cout << "P99 Latency: " << p99lat << "s" << std::endl;
     std::cout << "Mean Latency: " << avglat << "s" << std::endl;
-    std::cout << "Peak Throughput: " << peakthr << "qps" << std::endl;
+    std::cout << "Max Latency: " << maxlat << "s" << std::endl;
+
     std::cout << "Mean Throughput: " << avgthr << "qps" << std::endl;
-    std::cout << "Peak Recall: " << peakrcl*100.0 << "%" << std::endl;
+    
+    std::cout << "Min Recall: " << maxrcl*100.0 << "%" << std::endl;
     std::cout << "Mean Recall: " << avgrcl*100.0 << "%" << std::endl;
+    std::cout << "Max Recall: " << maxrcl*100.0 << "%" << std::endl;
 
     std::ofstream baseres("./baseline-res.fbin",std::ios::binary);
     bool new_file = !std::filesystem::exists("./stats.csv");
     std::ofstream stats("./stats.csv",std::ios::app);
-    if(new_file)
-        stats << "index,nq,k,nlist,nprobe,nbits,m,M,efConstruction,efSearch,p50lat,p90lat,p95lat,p99lat,avglat,peakQPS,avgQPS,peakrecall,avgrecall\n";
+    if (new_file)
+        stats << "index,nq,k,nlist,nprobe,nbits,m,M,efConstruction,efSearch,"
+                "minlat,p50lat,p90lat,avglat,maxlat,"
+                "avgQPS,"
+                "minrecall,avgrecall,maxrecall\n";
 
-    stats << "cpu-hnsw,";       // index   
+    stats << "cpu-hnsw,";   // index
     stats << nq << ",";         // nq
     stats << k << ",";          // k
     stats << ",";               // nlist
@@ -136,14 +147,20 @@ int main(int argc, char** argv) {
     stats << index->hnsw.nb_neighbors(1) << ",";               // M
     stats << index->hnsw.efConstruction << ",";               // efConstruction
     stats << index->hnsw.efSearch << ",";               // efSearch
-    stats << p50lat << ",";     // p50lat  
-    stats << p90lat << ",";     // p90lat
-    stats << p95lat << ",";     // p95lat
-    stats << p99lat << ",";     // p99lat
-    stats << avglat << ",";     // avglat
-    stats << peakthr << ",";    // peakqps
-    stats << avgthr << ",";     // avgqps
-    stats << peakrcl << ",";        // peakrecall
-    stats << avgrcl << "\n";        // avgrecall
+    
+    // latency
+    stats << minlat << ",";
+    stats << p50lat << ",";
+    stats << p90lat << ",";
+    stats << avglat << ",";
+    stats << maxlat << ",";
+    
+    // throughput
+    stats << avgthr << ",";
+    
+    // recall
+    stats << minrcl << ",";
+    stats << avgrcl << ",";
+    stats << maxrcl << "\n";
     return 0;
 }
