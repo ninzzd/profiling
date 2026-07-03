@@ -104,10 +104,14 @@ int main(int argc, char** argv) {
     double minlat = *std::min_element(latvec.begin(),latvec.end());
     double p50lat = latvec[(int)floor(nb/2.0)];
     double p90lat = latvec[(int)floor(9.0*nb/10.0)];
-    // double p95lat = latvec[(int)floor(9.5*nb/10.0)]; (not required, tmi)
-    // double p99lat = latvec[(int)floor(9.9*nb/10.0)];
     double avglat = std::accumulate(latvec.begin(),latvec.end(),0.0)/nb;
     double maxlat = *std::max_element(latvec.begin(),latvec.end());
+    double stdlat = 0.0;
+    for (int i = 0; i < nb; i++) {
+        stdlat += (latvec[i] - avglat) * (latvec[i] - avglat);
+    }
+    stdlat = std::sqrt(stdlat/nb);
+
     // throughput
     double avgthr = std::accumulate(thpvec.begin(),thpvec.end(),0.0)/nb;
     
@@ -115,6 +119,11 @@ int main(int argc, char** argv) {
     double minrcl = *std::min_element(rclvec.begin(),rclvec.end());
     double avgrcl = std::accumulate(rclvec.begin(),rclvec.end(),0.0)/nb;
     double maxrcl = *std::max_element(rclvec.begin(),rclvec.end());
+    double stdrcl = 0.0;
+    for (int i = 0; i < nb; i++) {
+        stdrcl += (rclvec[i] - avgrcl) * (rclvec[i] - avgrcl);
+    }
+    stdrcl = std::sqrt(stdrcl/nb);
 
     // std::cout << std::fixed << std::setprecision(9);
     std::cout << "Min Latency: " << minlat << "s" << std::endl;
@@ -122,21 +131,24 @@ int main(int argc, char** argv) {
     std::cout << "P90 Latency: " << p90lat << "s" << std::endl;
     std::cout << "Mean Latency: " << avglat << "s" << std::endl;
     std::cout << "Max Latency: " << maxlat << "s" << std::endl;
+    std::cout << "Latency Standard Deviation: " << stdlat << "s" << std::endl;
 
     std::cout << "Mean Throughput: " << avgthr << "qps" << std::endl;
     
     std::cout << "Min Recall: " << maxrcl*100.0 << "%" << std::endl;
     std::cout << "Mean Recall: " << avgrcl*100.0 << "%" << std::endl;
     std::cout << "Max Recall: " << maxrcl*100.0 << "%" << std::endl;
+    std::cout << "Recall Standard Deviation: " << stdrcl*100 << "%" << std::endl;
+    
 
     std::ofstream baseres("./baseline-res.fbin",std::ios::binary);
     bool new_file = !std::filesystem::exists("./stats.csv");
     std::ofstream stats("./stats.csv",std::ios::app);
     if (new_file)
         stats << "index,nq,k,nlist,nprobe,nbits,m,M,efConstruction,efSearch,"
-                "minlat,p50lat,p90lat,avglat,maxlat,"
+                "minlat,p50lat,p90lat,avglat,maxlat,stdlat,"
                 "avgQPS,"
-                "minrecall,avgrecall,maxrecall\n";
+                "minrecall,avgrecall,maxrecall,stdrcl\n";
 
     stats << "cpu-baseline,";   // index
     stats << nq << ",";         // nq
@@ -155,6 +167,7 @@ int main(int argc, char** argv) {
     stats << p90lat << ",";
     stats << avglat << ",";
     stats << maxlat << ",";
+    stats << stdlat << ",";
     
     // throughput
     stats << avgthr << ",";
@@ -162,6 +175,7 @@ int main(int argc, char** argv) {
     // recall
     stats << minrcl << ",";
     stats << avgrcl << ",";
-    stats << maxrcl << "\n";
+    stats << maxrcl << ",";
+    stats << stdrcl << "\n";
     return 0;
 }
