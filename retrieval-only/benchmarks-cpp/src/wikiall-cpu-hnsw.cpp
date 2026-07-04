@@ -44,12 +44,14 @@ int main(int argc, char** argv) {
     int nq;
     int k;
     int nb;
-    if(argc != 2){
-        std::cerr << "Incorrect syntax: wikiall_cpu_hnsw <nb>\n";
+    std::string stats_path;
+    if(argc != 3){
+        std::cerr << "Incorrect syntax: wikiall_cpu_hnsw <nb> <stats-path>\n";
         return -1;
     }
 
     nb = std::stoi(argv[1]);
+    stats_path = argv[2];
 
     faiss::Index* base = faiss::read_index("./cpu-hnsw.index");
     auto* index = dynamic_cast<faiss::IndexHNSWFlat*>(base);
@@ -103,10 +105,14 @@ int main(int argc, char** argv) {
     double minlat = *std::min_element(latvec.begin(),latvec.end());
     double p50lat = latvec[(int)floor(nb/2.0)];
     double p90lat = latvec[(int)floor(9.0*nb/10.0)];
-    // double p95lat = latvec[(int)floor(9.5*nb/10.0)]; (not required, tmi)
-    // double p99lat = latvec[(int)floor(9.9*nb/10.0)];
     double avglat = std::accumulate(latvec.begin(),latvec.end(),0.0)/nb;
     double maxlat = *std::max_element(latvec.begin(),latvec.end());
+    double stdlat = 0.0;
+    for (int i = 0; i < nb; i++) {
+        stdlat += (latvec[i] - avglat) * (latvec[i] - avglat);
+    }
+    stdlat = std::sqrt(stdlat/nb);
+
     // throughput
     double avgthr = std::accumulate(thpvec.begin(),thpvec.end(),0.0)/nb;
     
@@ -114,6 +120,11 @@ int main(int argc, char** argv) {
     double minrcl = *std::min_element(rclvec.begin(),rclvec.end());
     double avgrcl = std::accumulate(rclvec.begin(),rclvec.end(),0.0)/nb;
     double maxrcl = *std::max_element(rclvec.begin(),rclvec.end());
+    double stdrcl = 0.0;
+    for (int i = 0; i < nb; i++) {
+        stdrcl += (rclvec[i] - avgrcl) * (rclvec[i] - avgrcl);
+    }
+    stdrcl = std::sqrt(stdrcl/nb);
 
     // std::cout << std::fixed << std::setprecision(9);
     std::cout << "Min Latency: " << minlat << "s" << std::endl;
@@ -128,14 +139,13 @@ int main(int argc, char** argv) {
     std::cout << "Mean Recall: " << avgrcl*100.0 << "%" << std::endl;
     std::cout << "Max Recall: " << maxrcl*100.0 << "%" << std::endl;
 
-    std::ofstream baseres("./baseline-res.fbin",std::ios::binary);
-    bool new_file = !std::filesystem::exists("./stats.csv");
-    std::ofstream stats("./stats.csv",std::ios::app);
+    bool new_file = !std::filesystem::exists(stats_path);
+    std::ofstream stats(stats_path,std::ios::app);
     if (new_file)
         stats << "index,nq,k,nlist,nprobe,nbits,m,M,efConstruction,efSearch,"
-                "minlat,p50lat,p90lat,avglat,maxlat,"
+                "minlat,p50lat,p90lat,avglat,maxlat,stdlat,"
                 "avgQPS,"
-                "minrecall,avgrecall,maxrecall\n";
+                "minrecall,avgrecall,maxrecall,stdrcl\n";
 
     stats << "cpu-hnsw,";   // index
     stats << nq << ",";         // nq
@@ -149,18 +159,20 @@ int main(int argc, char** argv) {
     stats << index->hnsw.efSearch << ",";               // efSearch
     
     // latency
-    stats << minlat << ",";
-    stats << p50lat << ",";
-    stats << p90lat << ",";
-    stats << avglat << ",";
-    stats << maxlat << ",";
+    stats << minlat << ",";     // minimum latency
+    stats << p50lat << ",";     // 50th percentile latency
+    stats << p90lat << ",";     // 90th percentile latency
+    stats << avglat << ",";     // average latency
+    stats << maxlat << ",";     // maximum latency
+    stats << stdlat << ",";     // standard deviation of latency
     
     // throughput
-    stats << avgthr << ",";
+    stats << avgthr << ",";     // average throughput
     
     // recall
-    stats << minrcl << ",";
-    stats << avgrcl << ",";
-    stats << maxrcl << "\n";
+    stats << minrcl << ",";     // minimum recall
+    stats << avgrcl << ",";     // average recall
+    stats << maxrcl << ",";     // maximum recall
+    stats << stdrcl << "\n";    // standard deviation of recall
     return 0;
 }

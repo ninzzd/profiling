@@ -44,12 +44,14 @@ int main(int argc, char** argv) {
     int nq;
     int k;
     int nb;
-    if(argc != 2){
-        std::cerr << "Incorrect syntax: wikiall_cpu_baseline <nb>\n";
+    std::string stats_path;
+    if(argc != 3){
+        std::cerr << "Incorrect syntax: wikiall_cpu_baseline <nb> <stats-path>\n";
         return -1;
     }
 
     nb = std::stoi(argv[1]);
+    stats_path = argv[2];
 
     faiss::Index* base = faiss::read_index("./cpu-baseline.index");
     auto* index = dynamic_cast<faiss::IndexFlatL2*>(base);
@@ -141,9 +143,8 @@ int main(int argc, char** argv) {
     std::cout << "Recall Standard Deviation: " << stdrcl*100 << "%" << std::endl;
     
 
-    std::ofstream baseres("./baseline-res.fbin",std::ios::binary);
-    bool new_file = !std::filesystem::exists("./stats.csv");
-    std::ofstream stats("./stats.csv",std::ios::app);
+    bool new_file = !std::filesystem::exists(stats_path);
+    std::ofstream stats(stats_path,std::ios::app);
     if (new_file)
         stats << "index,nq,k,nlist,nprobe,nbits,m,M,efConstruction,efSearch,"
                 "minlat,p50lat,p90lat,avglat,maxlat,stdlat,"
@@ -162,20 +163,20 @@ int main(int argc, char** argv) {
     stats << ",";               // efSearch
     
     // latency
-    stats << minlat << ",";
-    stats << p50lat << ",";
-    stats << p90lat << ",";
-    stats << avglat << ",";
-    stats << maxlat << ",";
-    stats << stdlat << ",";
+    stats << minlat << ",";     // minimum latency
+    stats << p50lat << ",";     // 50th percentile latency
+    stats << p90lat << ",";     // 90th percentile latency
+    stats << avglat << ",";     // average latency
+    stats << maxlat << ",";     // maximum latency
+    stats << stdlat << ",";     // standard deviation of latency
     
     // throughput
-    stats << avgthr << ",";
+    stats << avgthr << ",";     // average throughput
     
     // recall
-    stats << minrcl << ",";
-    stats << avgrcl << ",";
-    stats << maxrcl << ",";
-    stats << stdrcl << "\n";
+    stats << minrcl << ",";     // minimum recall
+    stats << avgrcl << ",";     // average recall
+    stats << maxrcl << ",";     // maximum recall
+    stats << stdrcl << "\n";    // standard deviation of recall
     return 0;
 }

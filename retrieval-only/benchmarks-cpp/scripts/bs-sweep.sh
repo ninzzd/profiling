@@ -1,5 +1,19 @@
 #!/bin/bash
+cleanup() {
+    rm -rf ./*.index
+    rm -rf ./queries
+    rm -rf ./gt
+}
 
+interrupt() {
+    echo "Interrupt received. Cleaning up..."
+    cleanup
+    exit 130
+}
+
+trap interrupt SIGINT SIGTERM
+
+workspace=~/Git/profiling/
 querygen=./build/query_gen
 idxgen_base=./build/idxgen_baseline
 idxgen_hnsw=./build/idxgen_hnsw
@@ -9,10 +23,13 @@ base=./build/wikiall_cpu_baseline
 hnsw=./build/wikiall_cpu_hnsw
 ivf_flat=./build/wikiall_cpu_ivf_flat
 ivf_pq=./build/wikiall_cpu_ivf_pq
+stats_path=./results/workload-sweep/bs-sweep-stats.csv
+
+rm -rf $stats_path # remove old stats file
 
 # fixed workload params
 k=10
-iter=100
+nb=100
 
 # fixed hnsw params
 efconstruction=200
@@ -36,23 +53,23 @@ echo "Build complete"
 
 # sweep array
 batches=(1 2 4 8 16 32 64 128 256 512 1024)
-rm -rf ./queries
-rm -rf ./gt
+
+cleanup
 
 start=$(date +%s%N)
 for nq in "${batches[@]}"
 do
     echo "Running nq=$nq"
 
-    $querygen $nq $k $iter > /dev/null
+    $querygen $nq $k $nb > /dev/null
 
-    $base $iter > /dev/null
+    $base $nb $stats_path> /dev/null
 
-    $hnsw $iter > /dev/null
+    $hnsw $nb $stats_path> /dev/null
 
-    $ivf_flat $iter > /dev/null
+    $ivf_flat $nb $stats_path> /dev/null
 
-    $ivf_pq $iter > /dev/null
+    $ivf_pq $nb $stats_path> /dev/null
 
     rm -rf ./queries
     rm -rf ./gt
@@ -62,4 +79,9 @@ end=$(date +%s%N)
 elapsed_s=$(awk "BEGIN {print ($end-$start)/1000000000}")
 echo "$elapsed_s s"
 
-trap "rm -rf ./queries; rm -rf ./gt" SIGINT SIGSTP SIGTERM EXIT
+echo "Batch size sweep complete. Cleaning up..."
+cleanup
+
+echo "Plotting results..."
+source ${workspace}/.venv/bin/activate
+python3 ./scripts/bs-sweep-graphing.py --save
