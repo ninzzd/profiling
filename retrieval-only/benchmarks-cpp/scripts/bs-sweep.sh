@@ -26,6 +26,7 @@ ivf_pq=./build/wikiall_cpu_ivf_pq
 stats_path=./results/workload-sweep/bs-sweep-stats.csv
 
 rm -rf $stats_path # remove old stats file
+cleanup # remove old indexes and queries
 
 # fixed workload params
 k=10
@@ -53,8 +54,6 @@ echo "Build complete"
 
 # sweep array
 batches=(1 2 4 8 16 32 64 128 256 512 1024)
-
-cleanup
 
 start=$(date +%s%N)
 for nq in "${batches[@]}"
