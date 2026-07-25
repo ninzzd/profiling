@@ -12,13 +12,21 @@ parser.add_argument(
     action="store_true",
     help="Save figures as PNG"
 )
+parser.add_argument(
+    "--build-type",
+    type=str,
+    default="generic",
+    choices=["generic", "dd", "avx2", "avx512", "cuda", "cuvs"],
+    help="Build configuration used for the benchmark results"
+)
 args = parser.parse_args()
 
 # ---------------------------------------------------------
 # Read CSV
 # ---------------------------------------------------------
 SCRIPT_DIR = Path(__file__).resolve().parent
-df = pd.read_csv(SCRIPT_DIR / "../results/workload-sweep/bs-sweep-stats.csv")
+RESULTS_DIR = SCRIPT_DIR / f"../results/workload-sweep-{args.build_type}/"
+df = pd.read_csv(RESULTS_DIR / "bs-sweep-stats.csv")
 
 # ---------------------------------------------------------
 # Index display names
@@ -96,7 +104,7 @@ for idx in df["index"].unique():
 _style_plot(ax, "Query Batch Size", "Average Latency (s)", "Average Latency vs Query Batch Size")
 plt.tight_layout()
 if args.save:
-    plt.savefig("latency_vs_batch_size.png", dpi=300)
+    plt.savefig(RESULTS_DIR / "latency_vs_batch_size.png", dpi=300)
 
 # ---------------------------------------------------------
 # 2. Average Latency vs Batch Size (without baseline, with
@@ -139,7 +147,7 @@ for idx in df_no_baseline["index"].unique():
 _style_plot(ax, "Query Batch Size", "Average Latency (s)", "Average Latency vs Batch Size (without Flat)")
 plt.tight_layout()
 if args.save:
-    plt.savefig("latency_vs_batch_size_no_baseline.png", dpi=300)
+    plt.savefig(RESULTS_DIR / "latency_vs_batch_size_no_baseline.png", dpi=300)
 
 # ---------------------------------------------------------
 # 3. Throughput vs Batch Size (all indexes)
@@ -160,7 +168,7 @@ for idx in df["index"].unique():
 _style_plot(ax, "Query Batch Size", "Average Throughput (QPS)", "Average Throughput vs Query Batch Size")
 plt.tight_layout()
 if args.save:
-    plt.savefig("throughput_vs_batch_size.png", dpi=300)
+    plt.savefig(RESULTS_DIR / "throughput_vs_batch_size.png", dpi=300)
 
 # ---------------------------------------------------------
 # 4. Throughput vs Batch Size (without baseline)
@@ -181,7 +189,7 @@ for idx in df_no_baseline["index"].unique():
 _style_plot(ax, "Query Batch Size", "Average Throughput (QPS)", "Average Throughput vs Batch Size (without Flat)")
 plt.tight_layout()
 if args.save:
-    plt.savefig("throughput_vs_batch_size_no_baseline.png", dpi=300)
+    plt.savefig(RESULTS_DIR / "throughput_vs_batch_size_no_baseline.png", dpi=300)
 
 # ---------------------------------------------------------
 # 5. Recall vs Batch Size (with error bars)
@@ -208,7 +216,7 @@ for idx in df["index"].unique():
 _style_plot(ax, "Query Batch Size", "Average Recall@10", "Average Recall vs Query Batch Size")
 plt.tight_layout()
 if args.save:
-    plt.savefig("recall_vs_batch_size.png", dpi=300)
+    plt.savefig(RESULTS_DIR / "recall_vs_batch_size.png", dpi=300)
 
 # ---------------------------------------------------------
 # 6. Latency Standard Deviation vs Batch Size
@@ -229,7 +237,7 @@ for idx in df["index"].unique():
 _style_plot(ax, "Query Batch Size", "Latency Standard Deviation (s)", "Latency Standard Deviation vs Query Batch Size")
 plt.tight_layout()
 if args.save:
-    plt.savefig("latency_std_vs_batch_size.png", dpi=300)
+    plt.savefig(RESULTS_DIR / "latency_std_vs_batch_size.png", dpi=300)
 
 # ---------------------------------------------------------
 # 7. Recall Standard Deviation vs Batch Size
@@ -250,6 +258,6 @@ for idx in df["index"].unique():
 _style_plot(ax, "Query Batch Size", "Recall Standard Deviation", "Recall Standard Deviation vs Query Batch Size")
 plt.tight_layout()
 if args.save:
-    plt.savefig("recall_std_vs_batch_size.png", dpi=300)
+    plt.savefig(RESULTS_DIR / "recall_std_vs_batch_size.png", dpi=300)
 
 plt.show()

@@ -9,13 +9,20 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--save", action="store_true",
                     help="Save figures as PNG")
+parser.add_argument(
+    "--build-type",
+    type=str,
+    default="generic",
+    choices=["generic", "dd", "avx2", "avx512", "cuda", "cuvs"],
+    help="Build configuration used for the benchmark results"
+)
 args = parser.parse_args()
 
 # -----------------------------
 # Read CSV
 # -----------------------------
 SCRIPT_DIR = Path(__file__).resolve().parent
-RESULTS_DIR = SCRIPT_DIR / "../results/param-sweep/hnsw"
+RESULTS_DIR = SCRIPT_DIR / f"../results/param-sweep/hnsw-{args.build_type}"
 df = pd.read_csv(RESULTS_DIR / "hnsw-param-sweep.csv")
 
 plots = [

@@ -14,9 +14,11 @@ interrupt() {
 
 trap interrupt SIGINT SIGTERM
 
-querygen=./build/query_gen
-idxgen_hnsw=./build/idxgen_hnsw
-hnsw=./build/wikiall_cpu_hnsw
+workspace=~/Git/profiling
+build_dir=$workspace/retrieval-only/benchmarks-cpp/builds
+querygen=.$build_dir/build-$1/query_gen
+idxgen_hnsw=.$build_dir/build-$1/idxgen_hnsw
+hnsw=.$build_dir/build-$1/wikiall_cpu_hnsw
 
 # workload params
 k=10
@@ -92,3 +94,7 @@ echo "$elapsed_s s"
 
 echo "HNSW parameter sweep completed successfully."
 cleanup
+
+echo "Plotting results..."
+source ${workspace}/.venv/bin/activate
+python3 ./scripts/hnsw-param-sweep-graphing.py --build-type $1

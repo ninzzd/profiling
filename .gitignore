@@ -4,6 +4,7 @@
 *.html
 *_pyprof_files
 retrieval-only/faiss-builds
+retrieval-only/benchmarks-cpp/builds
 **/build/
 **/build.log
 **.tar

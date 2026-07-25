@@ -1,10 +1,25 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
+import argparse
+
+# -----------------------------
+# Command-line arguments
+# -----------------------------
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--build-type",
+    type=str,
+    default="generic",
+    choices=["generic", "dd", "avx2", "avx512", "cuda", "cuvs"],
+    help="Build configuration used for the benchmark results"
+)
+args = parser.parse_args()
 
 # Read CSV (relative to this script)
 SCRIPT_DIR = Path(__file__).resolve().parent
-df = pd.read_csv(SCRIPT_DIR / "../results/ivf-flat-param-sweep.csv")
+RESULTS_DIR = SCRIPT_DIR / f"../results/param-sweep/ivf-flat-{args.build_type}"
+df = pd.read_csv(RESULTS_DIR / "ivf-flat-param-sweep.csv")
 
 # -----------------------------
 # NLIST SWEEP

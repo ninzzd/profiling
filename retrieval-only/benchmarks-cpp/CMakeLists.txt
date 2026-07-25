@@ -10,14 +10,44 @@ find_package(OpenMP REQUIRED)
 find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
 
+# FAISS build variant to link against
+set(FAISS_BUILD_VARIANT "generic" CACHE STRING "FAISS build variant to link against (generic, avx2, avx512, dd, gpu, cuda, cuvs)")
+
+# Map variant to the actual FAISS library target and library subdirectory
+if(FAISS_BUILD_VARIANT STREQUAL "generic")
+    set(FAISS_LIB_TARGET faiss)
+    set(FAISS_LIB_SUBDIR faiss)
+elseif(FAISS_BUILD_VARIANT STREQUAL "avx2")
+    set(FAISS_LIB_TARGET faiss_avx2)
+    set(FAISS_LIB_SUBDIR faiss)
+elseif(FAISS_BUILD_VARIANT STREQUAL "avx512")
+    set(FAISS_LIB_TARGET faiss_avx512)
+    set(FAISS_LIB_SUBDIR faiss)
+elseif(FAISS_BUILD_VARIANT STREQUAL "dd")
+    set(FAISS_LIB_TARGET faiss)
+    set(FAISS_LIB_SUBDIR faiss)
+elseif(FAISS_BUILD_VARIANT STREQUAL "gpu" OR FAISS_BUILD_VARIANT STREQUAL "cuda")
+    set(FAISS_LIB_TARGET faiss)
+    set(FAISS_LIB_SUBDIR faiss)
+elseif(FAISS_BUILD_VARIANT STREQUAL "cuvs")
+    set(FAISS_LIB_TARGET faiss)
+    set(FAISS_LIB_SUBDIR faiss)
+else()
+    message(FATAL_ERROR "Unknown FAISS_BUILD_VARIANT: ${FAISS_BUILD_VARIANT}. Valid values: generic, avx2, avx512, dd, gpu, cuda, cuvs")
+endif()
+
 # Common paths
 set(FAISS_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/../faiss)
-set(FAISS_LIB_DIR    ${CMAKE_SOURCE_DIR}/../faiss-builds/cpu-debug-cpp/faiss)
+set(FAISS_LIB_DIR    ${CMAKE_SOURCE_DIR}/../faiss-builds/${FAISS_BUILD_VARIANT}/${FAISS_LIB_SUBDIR})
 set(BENCH_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
+
+message(STATUS "FAISS build variant: ${FAISS_BUILD_VARIANT}")
+message(STATUS "FAISS library target: ${FAISS_LIB_TARGET}")
+message(STATUS "FAISS library directory: ${FAISS_LIB_DIR}")
 
 # Common dependencies
 set(COMMON_LIBS
-    faiss
+    ${FAISS_LIB_TARGET}
     OpenMP::OpenMP_CXX
     ${BLAS_LIBRARIES}
     ${LAPACK_LIBRARIES}
@@ -89,3 +119,4 @@ add_benchmark_exec(idxgen_ivf_flat
 add_benchmark_exec(query_gen
     src/query-gen.cpp
 )
+

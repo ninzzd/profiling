@@ -14,9 +14,11 @@ interrupt() {
 
 trap interrupt SIGINT SIGTERM
 
-querygen=./build/query_gen
-idxgen_ivf_pq=./build/idxgen_ivf_pq
-ivf_pq=./build/wikiall_cpu_ivf_pq
+workspace=~/Git/profiling
+build_dir=$workspace/retrieval-only/benchmarks-cpp/builds
+querygen=.$build_dir/build-$1/query_gen
+idxgen_ivf_pq=.$build_dir/build-$1/idxgen_ivf_pq
+ivf_pq=.$build_dir/build-$1/wikiall_cpu_ivf_pq
 
 # workload params
 k=10
@@ -121,3 +123,7 @@ elapsed_s=$(awk "BEGIN {print ($end-$start)/1000000000}")
 echo "$elapsed_s s"
 echo "IVF-PQ parameter sweep completed successfully."
 cleanup
+
+echo "Plotting results..."
+source ${workspace}/.venv/bin/activate
+python3 ./scripts/ivf-pq-param-sweep-graphing.py --build-type $1

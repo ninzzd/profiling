@@ -9,9 +9,11 @@ cleanup() {
 
 trap cleanup SIGINT SIGTERM
 
-querygen=./build/query_gen
-idxgen_ivf_flat=./build/idxgen_ivf_flat
-ivf_flat=./build/wikiall_cpu_ivf_flat
+workspace=~/Git/profiling
+build_dir=$workspace/retrieval-only/benchmarks-cpp/builds
+querygen=.$build_dir/build-$1/query_gen
+idxgen_ivf_flat=.$build_dir/build-$1/idxgen_ivf_flat
+ivf_flat=.$build_dir/build-$1/wikiall_cpu_ivf_flat
 
 # nlist sweep
 nlist=(64 128 256 512 1024 2048 4096 8192)
@@ -56,3 +58,7 @@ done
 end=$(date +%s%N)
 elapsed_s=$(awk "BEGIN {print ($end-$start)/1000000000}")
 echo "$elapsed_s s"
+
+echo "Plotting results..."
+source ${workspace}/.venv/bin/activate
+python3 ./scripts/ivf-flat-param-sweep-graphing.py --build-type $1
