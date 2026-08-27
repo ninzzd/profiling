@@ -1,4 +1,5 @@
 #!/bin/bash
+cd "$(dirname "$0")/.." || exit 1
 
 cleanup() {
     rm -rf ./cpu-ivf-pq.index
@@ -16,9 +17,14 @@ trap interrupt SIGINT SIGTERM
 
 workspace=~/Git/profiling
 build_dir=$workspace/retrieval-only/benchmarks-cpp/builds
-querygen=.$build_dir/build-$1/query_gen
-idxgen_ivf_pq=.$build_dir/build-$1/idxgen_ivf_pq
-ivf_pq=.$build_dir/build-$1/wikiall_cpu_ivf_pq
+querygen=$build_dir/build-$1/query_gen
+idxgen_ivf_pq=$build_dir/build-$1/idxgen_ivf_pq
+ivf_pq=$build_dir/build-$1/wikiall_cpu_ivf_pq
+stats_dir=./results/param-sweep/ivf-pq-$1
+stats_path=$stats_dir/ivf-pq-param-sweep.csv
+
+mkdir -p "$stats_dir"
+rm -f "$stats_path" # remove old stats file
 
 # workload params
 k=10
@@ -43,7 +49,7 @@ do
 
     $idxgen_ivf_pq $n $nprobe $nbits $m > /dev/null
 
-    $ivf_pq $nb > /dev/null
+    $ivf_pq $nb $stats_path > /dev/null
 
 done
 end=$(date +%s%N)
@@ -67,7 +73,7 @@ do
 
     $idxgen_ivf_pq $nlist $n $nbits $m > /dev/null
 
-    $ivf_pq $nb > /dev/null
+    $ivf_pq $nb $stats_path > /dev/null
 
 done
 end=$(date +%s%N)
@@ -91,7 +97,7 @@ do
 
     $idxgen_ivf_pq $nlist $nprobe $nbits $n > /dev/null
 
-    $ivf_pq $nb > /dev/null
+    $ivf_pq $nb $stats_path > /dev/null
 
 done
 end=$(date +%s%N)
@@ -115,7 +121,7 @@ do
 
     $idxgen_ivf_pq $nlist $nprobe $n $m > /dev/null
 
-    $ivf_pq $nb > /dev/null
+    $ivf_pq $nb $stats_path > /dev/null
 
 done
 end=$(date +%s%N)

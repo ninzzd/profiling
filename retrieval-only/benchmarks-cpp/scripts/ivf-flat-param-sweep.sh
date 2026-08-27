@@ -1,4 +1,6 @@
 #!/bin/bash
+cd "$(dirname "$0")/.." || exit 1
+
 cleanup() {
     echo "Cleaning up..."
     rm -rf ./cpu-ivf-flat.index
@@ -11,9 +13,14 @@ trap cleanup SIGINT SIGTERM
 
 workspace=~/Git/profiling
 build_dir=$workspace/retrieval-only/benchmarks-cpp/builds
-querygen=.$build_dir/build-$1/query_gen
-idxgen_ivf_flat=.$build_dir/build-$1/idxgen_ivf_flat
-ivf_flat=.$build_dir/build-$1/wikiall_cpu_ivf_flat
+querygen=$build_dir/build-$1/query_gen
+idxgen_ivf_flat=$build_dir/build-$1/idxgen_ivf_flat
+ivf_flat=$build_dir/build-$1/wikiall_cpu_ivf_flat
+stats_dir=./results/param-sweep/ivf-flat-$1
+stats_path=$stats_dir/ivf-flat-param-sweep.csv
+
+mkdir -p "$stats_dir"
+rm -f "$stats_path" # remove old stats file
 
 # nlist sweep
 nlist=(64 128 256 512 1024 2048 4096 8192)
@@ -34,7 +41,7 @@ do
 
     $idxgen_ivf_flat $n $nprobe > /dev/null
 
-    $ivf_flat $nb > /dev/null
+    $ivf_flat $nb $stats_path > /dev/null
 
 done
 end=$(date +%s%N)
@@ -52,7 +59,7 @@ do
 
     $idxgen_ivf_flat $nlist $n > /dev/null
 
-    $ivf_flat $nb > /dev/null
+    $ivf_flat $nb $stats_path > /dev/null
 
 done
 end=$(date +%s%N)

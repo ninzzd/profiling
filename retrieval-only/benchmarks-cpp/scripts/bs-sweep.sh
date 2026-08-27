@@ -1,4 +1,6 @@
 #!/bin/bash
+cd "$(dirname "$0")/.." || exit 1
+
 cleanup() {
     rm -rf ./*.index
     rm -rf ./queries
@@ -15,18 +17,20 @@ trap interrupt SIGINT SIGTERM
 
 workspace=~/Git/profiling
 build_dir=$workspace/retrieval-only/benchmarks-cpp/builds
-querygen=.$build_dir/build-$1/query_gen
-idxgen_base=.$build_dir/build-$1/idxgen_baseline
-idxgen_hnsw=.$build_dir/build-$1/idxgen_hnsw
-idxgen_ivf_flat=.$build_dir/build-$1/idxgen_ivf_flat
-idxgen_ivf_pq=.$build_dir/build-$1/idxgen_ivf_pq
-base=.$build_dir/build-$1/wikiall_cpu_baseline
-hnsw=.$build_dir/build-$1/wikiall_cpu_hnsw
-ivf_flat=.$build_dir/build-$1/wikiall_cpu_ivf_flat
-ivf_pq=.$build_dir/build-$1/wikiall_cpu_ivf_pq
-stats_path=.results/workload-sweep/bs-sweep-stats.csv
+querygen=$build_dir/build-$1/query_gen
+idxgen_base=$build_dir/build-$1/idxgen_baseline
+idxgen_hnsw=$build_dir/build-$1/idxgen_hnsw
+idxgen_ivf_flat=$build_dir/build-$1/idxgen_ivf_flat
+idxgen_ivf_pq=$build_dir/build-$1/idxgen_ivf_pq
+base=$build_dir/build-$1/wikiall_cpu_baseline
+hnsw=$build_dir/build-$1/wikiall_cpu_hnsw
+ivf_flat=$build_dir/build-$1/wikiall_cpu_ivf_flat
+ivf_pq=$build_dir/build-$1/wikiall_cpu_ivf_pq
+stats_dir=./results/workload-sweep-$1
+stats_path=$stats_dir/bs-sweep-stats.csv
 
-rm -rf $stats_path # remove old stats file
+mkdir -p "$stats_dir"
+rm -f "$stats_path" # remove old stats file
 cleanup # remove old indexes and queries
 
 # fixed workload params
@@ -84,4 +88,4 @@ cleanup
 
 echo "Plotting results..."
 source ${workspace}/.venv/bin/activate
-python3 ./scripts/bs-sweep-graphing.py --build-type $1
+python3 ./scripts/bs-sweep-graphing.py --save --build-type $1

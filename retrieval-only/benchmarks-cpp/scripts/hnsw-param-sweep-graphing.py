@@ -76,7 +76,7 @@ for metric, ylabel, suffix in plots:
     plt.tight_layout()
 
     if args.save:
-        plt.savefig(f"M_{suffix}.png", dpi=300)
+        plt.savefig(RESULTS_DIR / f"M_{suffix}.png", dpi=300)
 
 # ---------------------------------------------------------
 # efConstruction sweep
@@ -104,7 +104,7 @@ for metric, ylabel, suffix in plots:
     plt.tight_layout()
 
     if args.save:
-        plt.savefig(f"efConstruction_{suffix}.png", dpi=300)
+        plt.savefig(RESULTS_DIR / f"efConstruction_{suffix}.png", dpi=300)
 
 # ---------------------------------------------------------
 # efSearch sweep

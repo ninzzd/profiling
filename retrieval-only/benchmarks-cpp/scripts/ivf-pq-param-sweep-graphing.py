@@ -1,6 +1,4 @@
 import pandas as pd
-import matplotlib
-matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 from pathlib import Path
 import argparse
@@ -75,7 +73,7 @@ for metric, ylabel, suffix in plots:
 
     plt.tight_layout()
     if SAVE_GRAPHS:
-        plt.savefig(f"nlist_{suffix}.png", dpi=300)
+        plt.savefig(RESULTS_DIR / f"nlist_{suffix}.png", dpi=300)
 
 # ------------------------------------------------------------------
 # nprobe sweep
@@ -100,7 +98,7 @@ for metric, ylabel, suffix in plots:
 
     plt.tight_layout()
     if SAVE_GRAPHS:
-        plt.savefig(f"nprobe_{suffix}.png", dpi=300)
+        plt.savefig(RESULTS_DIR / f"nprobe_{suffix}.png", dpi=300)
 
 # ------------------------------------------------------------------
 # m sweep
@@ -124,7 +122,7 @@ for metric, ylabel, suffix in plots:
 
     plt.tight_layout()
     if SAVE_GRAPHS:
-        plt.savefig(f"m_{suffix}.png", dpi=300)
+        plt.savefig(RESULTS_DIR / f"m_{suffix}.png", dpi=300)
 
 # ------------------------------------------------------------------
 # nbits sweep
@@ -148,6 +146,6 @@ for metric, ylabel, suffix in plots:
 
     plt.tight_layout()
     if SAVE_GRAPHS:
-        plt.savefig(f"nbits_{suffix}.png", dpi=300)
+        plt.savefig(RESULTS_DIR / f"nbits_{suffix}.png", dpi=300)
 
 plt.show()

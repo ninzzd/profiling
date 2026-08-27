@@ -1,4 +1,5 @@
 #!/bin/bash
+cd "$(dirname "$0")/.." || exit 1
 
 cleanup() {
     rm -rf ./cpu-hnsw.index
@@ -16,9 +17,14 @@ trap interrupt SIGINT SIGTERM
 
 workspace=~/Git/profiling
 build_dir=$workspace/retrieval-only/benchmarks-cpp/builds
-querygen=.$build_dir/build-$1/query_gen
-idxgen_hnsw=.$build_dir/build-$1/idxgen_hnsw
-hnsw=.$build_dir/build-$1/wikiall_cpu_hnsw
+querygen=$build_dir/build-$1/query_gen
+idxgen_hnsw=$build_dir/build-$1/idxgen_hnsw
+hnsw=$build_dir/build-$1/wikiall_cpu_hnsw
+stats_dir=./results/param-sweep/hnsw-$1
+stats_path=$stats_dir/hnsw-param-sweep.csv
+
+mkdir -p "$stats_dir"
+rm -f "$stats_path" # remove old stats file
 
 # workload params
 k=10
@@ -41,7 +47,7 @@ do
 
     $idxgen_hnsw $efconstruction $efsearch $m > /dev/null
 
-    $hnsw $nb > /dev/null
+    $hnsw $nb $stats_path > /dev/null
 
 done
 end=$(date +%s%N)
@@ -63,7 +69,7 @@ do
 
     $idxgen_hnsw $efc $efsearch $M > /dev/null
 
-    $hnsw $nb > /dev/null
+    $hnsw $nb $stats_path > /dev/null
 
 done
 end=$(date +%s%N)
@@ -85,7 +91,7 @@ do
 
     $idxgen_hnsw $efconstruction $efs $M > /dev/null
 
-    $hnsw $nb > /dev/null
+    $hnsw $nb $stats_path > /dev/null
 
 done
 end=$(date +%s%N)
@@ -97,4 +103,4 @@ cleanup
 
 echo "Plotting results..."
 source ${workspace}/.venv/bin/activate
-python3 ./scripts/hnsw-param-sweep-graphing.py --build-type $1
+python3 ./scripts/hnsw-param-sweep-graphing.py --save --build-type $1

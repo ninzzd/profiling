@@ -51,7 +51,7 @@ for metric, ylabel, outfile in plots:
     plt.grid(True)
 
     plt.tight_layout()
-    plt.savefig(outfile, dpi=300)
+    plt.savefig(RESULTS_DIR / outfile, dpi=300)
 
 # -----------------------------
 # NPROBE SWEEP
@@ -83,6 +83,6 @@ for metric, ylabel, outfile in plots:
     plt.grid(True)
 
     plt.tight_layout()
-    plt.savefig(outfile, dpi=300)
+    plt.savefig(RESULTS_DIR / outfile, dpi=300)
 
 plt.show()

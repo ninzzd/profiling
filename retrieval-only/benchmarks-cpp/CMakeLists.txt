@@ -45,6 +45,14 @@ message(STATUS "FAISS build variant: ${FAISS_BUILD_VARIANT}")
 message(STATUS "FAISS library target: ${FAISS_LIB_TARGET}")
 message(STATUS "FAISS library directory: ${FAISS_LIB_DIR}")
 
+# GPU support: only variants whose faiss-builds/<variant> was configured with
+# FAISS_ENABLE_GPU=ON actually export GPU symbols (currently: cuda, cuvs).
+set(FAISS_GPU_VARIANT OFF)
+if(FAISS_BUILD_VARIANT STREQUAL "cuda" OR FAISS_BUILD_VARIANT STREQUAL "cuvs")
+    set(FAISS_GPU_VARIANT ON)
+    find_package(CUDAToolkit REQUIRED)
+endif()
+
 # Common dependencies
 set(COMMON_LIBS
     ${FAISS_LIB_TARGET}
@@ -71,6 +79,17 @@ function(add_benchmark_exec TARGET_NAME SOURCE_FILE)
     )
     target_link_libraries(${TARGET_NAME} PRIVATE
         ${COMMON_LIBS}
+    )
+endfunction()
+
+# Helper function to create a GPU benchmark executable (adds CUDA include
+# dirs and runtime/BLAS libs on top of add_benchmark_exec)
+function(add_gpu_benchmark_exec TARGET_NAME SOURCE_FILE)
+    add_benchmark_exec(${TARGET_NAME} ${SOURCE_FILE} ${ARGN})
+    target_link_libraries(${TARGET_NAME} PRIVATE
+        CUDA::toolkit
+        CUDA::cudart
+        CUDA::cublas
     )
 endfunction()
 
@@ -119,4 +138,47 @@ add_benchmark_exec(idxgen_ivf_flat
 add_benchmark_exec(query_gen
     src/query-gen.cpp
 )
+
+add_benchmark_exec(idxgen_ivf_pq_fastscan
+    src/idxgen-ivf-pq-fastscan.cpp
+)
+
+add_benchmark_exec(wikiall_cpu_ivf_pq_fastscan
+    src/wikiall-cpu-ivf-pq-fastscan.cpp
+    ${UTILS_SRC}
+)
+
+# --- GPU benchmarks (cuda, cuvs variants only) ---
+
+if(FAISS_GPU_VARIANT)
+    add_gpu_benchmark_exec(idxgen_gpu_ivf_flat
+        src/idxgen-gpu-ivf-flat.cpp
+    )
+
+    add_gpu_benchmark_exec(wikiall_gpu_ivf_flat
+        src/wikiall-gpu-ivf-flat.cpp
+        ${UTILS_SRC}
+    )
+
+    add_gpu_benchmark_exec(idxgen_gpu_ivf_pq
+        src/idxgen-gpu-ivf-pq.cpp
+    )
+
+    add_gpu_benchmark_exec(wikiall_gpu_ivf_pq
+        src/wikiall-gpu-ivf-pq.cpp
+        ${UTILS_SRC}
+    )
+endif()
+
+# CAGRA (graph-based ANN, the GPU equivalent of HNSW) requires cuVS
+if(FAISS_BUILD_VARIANT STREQUAL "cuvs")
+    add_gpu_benchmark_exec(idxgen_gpu_cagra
+        src/idxgen-gpu-cagra.cpp
+    )
+
+    add_gpu_benchmark_exec(wikiall_gpu_cagra
+        src/wikiall-gpu-cagra.cpp
+        ${UTILS_SRC}
+    )
+endif()
 
