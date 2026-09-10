@@ -27,21 +27,34 @@ nlist=(64 128 256 512 1024 2048 4096 8192)
 
 nprobe=32
 
+# logging: stderr from every binary invocation is appended here
+log_dir=./logs
+mkdir -p "$log_dir"
+log_path="$log_dir/ivf-flat-param-sweep-$1-$(date +%Y%m%d-%H%M%S).log"
+echo "=== ivf-flat-param-sweep | variant=$1 | started $(date -Is) ===" > "$log_path"
+echo "stderr log: $log_path"
+
+# runtime env params (not swept)
+# Cap the BLAS pool so it cannot oversubscribe cores against FAISS's
+# own OpenMP loops. FAISS parallelism (OMP_NUM_THREADS) is left alone.
+openblas_threads=1
+export OPENBLAS_NUM_THREADS=$openblas_threads
+
 # workload params
 k=10
 nq=32
 nb=100
 
-$querygen $nq $k $nb > /dev/null # generate fixed batches of queries and groundtruths
-echo "nlist sweep..."
+$querygen $nq $k $nb > /dev/null 2>>"$log_path" # generate fixed batches of queries and groundtruths
+echo "nlist sweep..." | tee -a "$log_path"
 start=$(date +%s%N)
 for n in "${nlist[@]}"
 do
-    echo "Running nlist=$n"
+    echo "Running nlist=$n" | tee -a "$log_path"
 
-    $idxgen_ivf_flat $n $nprobe > /dev/null
+    $idxgen_ivf_flat $n $nprobe > /dev/null 2>>"$log_path"
 
-    $ivf_flat $nb $stats_path > /dev/null
+    $ivf_flat $nb $stats_path > /dev/null 2>>"$log_path"
 
 done
 end=$(date +%s%N)
@@ -51,15 +64,15 @@ echo "$elapsed_s s"
 
 nlist=2048
 nprobe=(1 2 4 8 16 32 64 128 256)
-echo "nrobe sweep..."
+echo "nrobe sweep..." | tee -a "$log_path"
 start=$(date +%s%N)
 for n in "${nprobe[@]}"
 do
-    echo "Running nprobe=$n"
+    echo "Running nprobe=$n" | tee -a "$log_path"
 
-    $idxgen_ivf_flat $nlist $n > /dev/null
+    $idxgen_ivf_flat $nlist $n > /dev/null 2>>"$log_path"
 
-    $ivf_flat $nb $stats_path > /dev/null
+    $ivf_flat $nb $stats_path > /dev/null 2>>"$log_path"
 
 done
 end=$(date +%s%N)

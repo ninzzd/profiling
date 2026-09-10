@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <chrono>
 #include <iostream>
+#include <string>
 
 #include <faiss/gpu/GpuCloner.h>
 #include <faiss/gpu/GpuIndexIVFPQ.h>

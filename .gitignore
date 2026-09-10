@@ -12,3 +12,5 @@ datasets/
 **.fbin
 **.data
 **.index
+**/logs/
+**.log

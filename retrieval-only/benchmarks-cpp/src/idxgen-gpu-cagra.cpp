@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <chrono>
 #include <iostream>
+#include <string>
 
 #include <faiss/IndexHNSW.h>
 #include <faiss/gpu/GpuIndexCagra.h>
@@ -64,6 +65,12 @@ int main(int argc, char** argv) {
     std::cout << "Writing index to disk...\n";
     start = std::chrono::high_resolution_clock::now();
     faiss::IndexHNSWCagra cpu_index;
+    // Required: with base_level_only left false, copyTo() falls back to a
+    // full IndexHNSW::add() over the whole base set, rebuilding the upper
+    // HNSW levels on the CPU instead of only transplanting CAGRA's kNN
+    // graph into level 0. The level-0 graph is copied either way, and it is
+    // all the benchmark reads back via copyFrom().
+    cpu_index.base_level_only = true;
     index.copyTo(&cpu_index);
     faiss::write_index(&cpu_index, "./gpu-cagra.index");
     end = std::chrono::high_resolution_clock::now();

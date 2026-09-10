@@ -53,6 +53,16 @@ if(FAISS_BUILD_VARIANT STREQUAL "cuda" OR FAISS_BUILD_VARIANT STREQUAL "cuvs")
     find_package(CUDAToolkit REQUIRED)
 endif()
 
+# A FAISS built with FAISS_ENABLE_CUVS=ON leaves unresolved cuvs:: and rmm::
+# symbols in libfaiss.a, so anything linking it must also link the cuVS C++
+# library. Point CMake at the install with -Dcuvs_ROOT=<prefix> (e.g. the conda
+# env prefix holding lib/cmake/cuvs).
+set(GPU_EXTRA_LIBS "")
+if(FAISS_BUILD_VARIANT STREQUAL "cuvs")
+    find_package(cuvs REQUIRED)
+    list(APPEND GPU_EXTRA_LIBS cuvs::cuvs)
+endif()
+
 # Common dependencies
 set(COMMON_LIBS
     ${FAISS_LIB_TARGET}
@@ -90,6 +100,7 @@ function(add_gpu_benchmark_exec TARGET_NAME SOURCE_FILE)
         CUDA::toolkit
         CUDA::cudart
         CUDA::cublas
+        ${GPU_EXTRA_LIBS}
     )
 endfunction()
 

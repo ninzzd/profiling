@@ -107,7 +107,7 @@ int main(int argc, char** argv) {
 
     std::cout << "Mean Throughput: " << avgthr << "qps" << std::endl;
     
-    std::cout << "Min Recall: " << maxrcl*100.0 << "%" << std::endl;
+    std::cout << "Min Recall: " << minrcl*100.0 << "%" << std::endl;
     std::cout << "Mean Recall: " << avgrcl*100.0 << "%" << std::endl;
     std::cout << "Max Recall: " << maxrcl*100.0 << "%" << std::endl;
     std::cout << "Recall Standard Deviation: " << stdrcl*100 << "%" << std::endl;

@@ -36,6 +36,9 @@ labels = {
     "cpu-hnsw": "HNSW",
     "cpu-ivf-flat": "IVF-Flat",
     "cpu-ivf-pq": "IVF-PQ",
+    "gpu-ivf-flat": "GPU IVF-Flat",
+    "gpu-ivf-pq": "GPU IVF-PQ",
+    "gpu-cagra": "GPU CAGRA",
 }
 
 # Filter out baseline for the "without baseline" plots

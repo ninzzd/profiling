@@ -7,6 +7,10 @@
 #include <iostream>
 #include <filesystem>
 #include <numeric>
+#include <algorithm>
+#include <cmath>
+#include <memory>
+#include <string>
 
 #include <faiss/gpu/GpuCloner.h>
 #include <faiss/gpu/GpuIndexIVFPQ.h>
@@ -25,14 +29,23 @@ int main(int argc, char** argv) {
     }
 
     nb = std::stoi(argv[1]);
+    if (nb <= 0) {
+        std::cerr << "nb must be a positive integer.\n";
+        return -1;
+    }
     std::string stats_path = argv[2];
 
-    faiss::Index* cpu_base = faiss::read_index("./gpu-ivf-pq.index");
-
+    // res must outlive the GPU index, so it is declared first
     faiss::gpu::StandardGpuResources res;
-    faiss::Index* gpu_base = faiss::gpu::index_cpu_to_gpu(&res, 0, cpu_base);
-    delete cpu_base;
-    auto* index = dynamic_cast<faiss::gpu::GpuIndexIVFPQ*>(gpu_base);
+
+    std::unique_ptr<faiss::Index> cpu_base(
+            faiss::read_index("./gpu-ivf-pq.index"));
+    // index_cpu_to_gpu deep-copies the inverted lists onto the device,
+    // so the CPU-side copy can be released right away
+    std::unique_ptr<faiss::Index> gpu_base(
+            faiss::gpu::index_cpu_to_gpu(&res, 0, cpu_base.get()));
+    cpu_base.reset();
+    auto* index = dynamic_cast<faiss::gpu::GpuIndexIVFPQ*>(gpu_base.get());
     if (!index) {
         std::cerr << "Failed to load GPU IVF-PQ index.\n";
         return -1;
@@ -111,7 +124,7 @@ int main(int argc, char** argv) {
 
     std::cout << "Mean Throughput: " << avgthr << "qps" << std::endl;
 
-    std::cout << "Min Recall: " << maxrcl*100.0 << "%" << std::endl;
+    std::cout << "Min Recall: " << minrcl*100.0 << "%" << std::endl;
     std::cout << "Mean Recall: " << avgrcl*100.0 << "%" << std::endl;
     std::cout << "Max Recall: " << maxrcl*100.0 << "%" << std::endl;
     std::cout << "Recall Standard Deviation: " << stdrcl*100 << "%" << std::endl;

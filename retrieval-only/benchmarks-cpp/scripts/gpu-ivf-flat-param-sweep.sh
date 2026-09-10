@@ -2,7 +2,7 @@
 cd "$(dirname "$0")/.." || exit 1
 
 cleanup() {
-    rm -rf ./cpu-ivf-pq.index
+    rm -rf ./gpu-ivf-flat.index
     rm -rf ./queries
     rm -rf ./gt
 }
@@ -15,22 +15,30 @@ interrupt() {
 
 trap interrupt SIGINT SIGTERM
 
+# GPU executables are only produced for the cuda and cuvs variants
+# (see FAISS_GPU_VARIANT in CMakeLists.txt)
+case "$1" in
+    cuda|cuvs) ;;
+    *) echo "Usage: $0 <cuda|cuvs>"; exit 1 ;;
+esac
+
 workspace=~/Git/profiling
 build_dir=$workspace/retrieval-only/benchmarks-cpp/builds
 querygen=$build_dir/build-$1/query_gen
-idxgen_ivf_pq=$build_dir/build-$1/idxgen_ivf_pq
-ivf_pq=$build_dir/build-$1/wikiall_cpu_ivf_pq
-stats_dir=./results/param-sweep/ivf-pq-$1
-stats_path=$stats_dir/ivf-pq-param-sweep.csv
+idxgen_gpu_ivf_flat=$build_dir/build-$1/idxgen_gpu_ivf_flat
+gpu_ivf_flat=$build_dir/build-$1/wikiall_gpu_ivf_flat
+stats_dir=./results/param-sweep/gpu-ivf-flat-$1
+stats_path=$stats_dir/gpu-ivf-flat-param-sweep.csv
 
 mkdir -p "$stats_dir"
 rm -f "$stats_path" # remove old stats file
+cleanup             # remove stale indexes and queries (a 1M index is ~3 GB)
 
 # logging: stderr from every binary invocation is appended here
 log_dir=./logs
 mkdir -p "$log_dir"
-log_path="$log_dir/ivf-pq-param-sweep-$1-$(date +%Y%m%d-%H%M%S).log"
-echo "=== ivf-pq-param-sweep | variant=$1 | started $(date -Is) ===" > "$log_path"
+log_path="$log_dir/gpu-ivf-flat-param-sweep-$1-$(date +%Y%m%d-%H%M%S).log"
+echo "=== gpu-ivf-flat-param-sweep | variant=$1 | started $(date -Is) ===" > "$log_path"
 echo "stderr log: $log_path"
 
 # runtime env params (not swept)
@@ -49,10 +57,6 @@ nlist=(64 128 256 512 1024 2048 4096 8192)
 
 nprobe=32
 
-m=64
-
-nbits=8
-
 $querygen $nq $k $nb > /dev/null 2>>"$log_path" # generate fixed batches of queries and groundtruths
 echo "nlist sweep..." | tee -a "$log_path"
 start=$(date +%s%N)
@@ -60,9 +64,9 @@ for n in "${nlist[@]}"
 do
     echo "Running nlist=$n" | tee -a "$log_path"
 
-    $idxgen_ivf_pq $n $nprobe $nbits $m > /dev/null 2>>"$log_path"
+    $idxgen_gpu_ivf_flat $n $nprobe > /dev/null 2>>"$log_path" || { echo "  index build failed, skipping"; continue; }
 
-    $ivf_pq $nb $stats_path > /dev/null 2>>"$log_path"
+    $gpu_ivf_flat $nb $stats_path > /dev/null 2>>"$log_path"
 
 done
 end=$(date +%s%N)
@@ -74,75 +78,24 @@ nlist=2048
 
 nprobe=(1 2 4 8 16 32 64 128 256)
 
-m=64
-
-nbits=8
-
 echo "nprobe sweep..." | tee -a "$log_path"
 start=$(date +%s%N)
 for n in "${nprobe[@]}"
 do
     echo "Running nprobe=$n" | tee -a "$log_path"
 
-    $idxgen_ivf_pq $nlist $n $nbits $m > /dev/null 2>>"$log_path"
+    $idxgen_gpu_ivf_flat $nlist $n > /dev/null 2>>"$log_path" || { echo "  index build failed, skipping"; continue; }
 
-    $ivf_pq $nb $stats_path > /dev/null 2>>"$log_path"
-
-done
-end=$(date +%s%N)
-elapsed_s=$(awk "BEGIN {print ($end-$start)/1000000000}")
-echo "$elapsed_s s"
-
-# m sweep
-nlist=2048
-
-nprobe=32
-
-m=(8 16 32 48 64 96 128 256)
-
-nbits=8
-
-echo "m sweep..." | tee -a "$log_path"
-start=$(date +%s%N)
-for n in "${m[@]}"
-do
-    echo "Running m=$n" | tee -a "$log_path"
-
-    $idxgen_ivf_pq $nlist $nprobe $nbits $n > /dev/null 2>>"$log_path"
-
-    $ivf_pq $nb $stats_path > /dev/null 2>>"$log_path"
+    $gpu_ivf_flat $nb $stats_path > /dev/null 2>>"$log_path"
 
 done
 end=$(date +%s%N)
 elapsed_s=$(awk "BEGIN {print ($end-$start)/1000000000}")
 echo "$elapsed_s s"
 
-# nbits sweep
-nlist=2048
-
-nprobe=32
-
-m=64
-
-nbits=(4 5 6 7 8)
-
-echo "nbits sweep..." | tee -a "$log_path"
-start=$(date +%s%N)
-for n in "${nbits[@]}"
-do
-    echo "Running nbits=$n" | tee -a "$log_path"
-
-    $idxgen_ivf_pq $nlist $nprobe $n $m > /dev/null 2>>"$log_path"
-
-    $ivf_pq $nb $stats_path > /dev/null 2>>"$log_path"
-
-done
-end=$(date +%s%N)
-elapsed_s=$(awk "BEGIN {print ($end-$start)/1000000000}")
-echo "$elapsed_s s"
-echo "IVF-PQ parameter sweep completed successfully."
+echo "GPU IVF-Flat parameter sweep completed successfully."
 cleanup
 
 echo "Plotting results..."
 source ${workspace}/.venv/bin/activate
-python3 ./scripts/ivf-pq-param-sweep-graphing.py --build-type $1
+python3 ./scripts/gpu-ivf-flat-param-sweep-graphing.py --build-type $1 --save

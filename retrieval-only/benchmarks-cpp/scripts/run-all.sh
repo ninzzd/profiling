@@ -15,6 +15,12 @@ interrupt() {
 
 trap interrupt SIGINT SIGTERM
 
+# runtime env params (not swept)
+# Set here too so the value is visible at the top level; each sweep
+# script also sets it independently when run standalone.
+openblas_threads=1
+export OPENBLAS_NUM_THREADS=$openblas_threads
+
 build_configs=("generic" "dd" "avx2" "avx512")
 
 for n in "${build_configs[@]}"

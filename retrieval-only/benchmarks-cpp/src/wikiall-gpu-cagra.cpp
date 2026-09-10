@@ -9,6 +9,10 @@
 #include <iostream>
 #include <filesystem>
 #include <numeric>
+#include <algorithm>
+#include <cmath>
+#include <memory>
+#include <string>
 
 #include <faiss/IndexHNSW.h>
 #include <faiss/gpu/GpuIndexCagra.h>
@@ -27,10 +31,21 @@ int main(int argc, char** argv) {
     }
 
     nb = std::stoi(argv[1]);
+    if (nb <= 0) {
+        std::cerr << "nb must be a positive integer.\n";
+        return -1;
+    }
     std::string stats_path = argv[2];
 
-    faiss::Index* base = faiss::read_index("./gpu-cagra.index");
-    auto* cpu_index = dynamic_cast<faiss::IndexHNSWCagra*>(base);
+    // GpuIndexCagra::copyFrom does NOT take ownership of the training
+    // data: CuvsCagra keeps a raw pointer into the CPU index's storage
+    // (`storage_ = dataset` in faiss/gpu/impl/CuvsCagra.cu) and reads it
+    // again at search time via update_dataset(). The source
+    // IndexHNSWCagra must therefore outlive the GPU index -- hence the
+    // declaration order here (base, then res, then index, destroyed in
+    // reverse) and no early release.
+    std::unique_ptr<faiss::Index> base(faiss::read_index("./gpu-cagra.index"));
+    auto* cpu_index = dynamic_cast<faiss::IndexHNSWCagra*>(base.get());
     if (!cpu_index) {
         std::cerr << "Failed to load baseline index.\n";
         return -1;
@@ -40,7 +55,6 @@ int main(int argc, char** argv) {
     faiss::gpu::GpuIndexCagraConfig config;
     faiss::gpu::GpuIndexCagra index(&res, cpu_index->d, faiss::METRIC_L2, config);
     index.copyFrom(cpu_index);
-    delete base;
 
     faiss::gpu::SearchParametersCagra search_params;
     // Analogous to HNSW's efSearch: bounds the intermediate candidate list
@@ -120,7 +134,7 @@ int main(int argc, char** argv) {
 
     std::cout << "Mean Throughput: " << avgthr << "qps" << std::endl;
 
-    std::cout << "Min Recall: " << maxrcl*100.0 << "%" << std::endl;
+    std::cout << "Min Recall: " << minrcl*100.0 << "%" << std::endl;
     std::cout << "Mean Recall: " << avgrcl*100.0 << "%" << std::endl;
     std::cout << "Max Recall: " << maxrcl*100.0 << "%" << std::endl;
     std::cout << "Recall Standard Deviation: " << stdrcl*100 << "%" << std::endl;
